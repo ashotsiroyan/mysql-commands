@@ -1,6 +1,6 @@
 {
   "name": "@ashotsiroyan/mysql-commands",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Control MySQL db with json",
   "repository": "git://github.com/ashotsiroyan/mysql-commands",
   "main": "index.js",
@@ -11,8 +11,5 @@
     "MySQL"
   ],
   "author": "Ashot Siroyan",
-  "publishConfig": {
-    "registry":"https://npm.pkg.github.com"
-  },
   "license": "MIT"
 }
