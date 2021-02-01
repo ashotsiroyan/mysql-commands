@@ -4,9 +4,6 @@
   "description": "Control MySQL db with json",
   "repository": "git://github.com/ashotsiroyan/mysql-commands",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [
     "MySQL"
   ],
