@@ -1,4 +1,5 @@
 const mysql = require('./mysql');
+const Document = require('./Document');
 const Schema = require('./Schema');
 
 async function connect({host, user, password, database}){
@@ -11,7 +12,12 @@ async function connect({host, user, password, database}){
     }
 }
 
+function model(table, Schema) {
+    return new Document(table, Schema.getMysqlString(), Schema.getDefinition());
+}
+
 module.exports = {
     connect,
-    Schema
+    Schema,
+    model
 }
