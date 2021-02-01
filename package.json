@@ -11,5 +11,8 @@
     "MySQL"
   ],
   "author": "Ashot Siroyan",
+  "publishConfig": {
+    "registry":"https://npm.pkg.github.com"
+  },
   "license": "ISC"
 }
