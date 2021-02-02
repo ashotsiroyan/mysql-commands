@@ -3,16 +3,21 @@ const dataTypes = require('./assets/dataTypes');
 class Schema{
     #mysql = "";
     #definition;
+    #methods = {}
     constructor(props){
         this.#definition = props;
 
         this.#convertToString();
     }
-    getMysqlString(){
-        return this.#mysql;
+    getParams(){
+        return {
+            sqlString: this.#mysql,
+            definition: this.#definition,
+            methods: this.#methods
+        }
     }
-    getDefinition(){
-        return this.#definition;
+    pre(method, callBack){
+        this.#methods[method] = callBack;
     }
     #convertToString = () =>{
         Object.keys(this.#definition).forEach((field, i)=>{

@@ -4,8 +4,11 @@ var Singleton = (function() {
     var instance;
 
     return {
-        getInstance: function () {
-            return instance;
+        pool: {
+            execute: (sql, values) => {if(instance) return instance.execute(sql, values); else throw "Isn't connected to database.";},
+            query: (sql, values) => {if(instance) return instance.query(sql, values); else throw "Isn't connected to database.";},
+            escape: (value) => mysql.escape(value),
+            format: (sql, values) => mysql.format(sql, values)
         },
         connect: function (props) {
             try{

@@ -1,4 +1,4 @@
-const mysql = require('./mysql');
+const {pool} = require('./mysql');
 const actions = require('./assets/actions');
 
 function getFilterFileds(arg) {
@@ -23,7 +23,7 @@ function getFilterFileds(arg) {
                         }
                         else if(field === '$in' || field === '$nin'){
                             params[field].forEach((value)=>{
-                                filterFileds += `${prevField} ${actions[field]} ${mysql.getInstance().escape(value)} AND `;
+                                filterFileds += `${prevField} ${actions[field]} ${pool.escape(value)} AND `;
                             });
                         }
                     }
@@ -33,9 +33,9 @@ function getFilterFileds(arg) {
                     //     value = "'" + value + "'";
 
                     if(field[0] === '$'){
-                        filterFileds += `${prevField} ${actions[field]} ${mysql.getInstance().escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                        filterFileds += `${prevField} ${actions[field]} ${pool.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
                     }else{
-                        filterFileds += `${field} = ${mysql.getInstance().escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                        filterFileds += `${field} = ${pool.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
                     }
                 }
             });
@@ -69,16 +69,18 @@ class Document{
     #table;
     #mysqlStructure;
     #definition;
+    #methods;
     #query = {
         main: "",
         skip: "",
         sort: "",
         limit: "",
     };
-    constructor(table, mysqlStructure, definition){
+    constructor(table, SchemaParams){
         this.#table = table;
-        this.#mysqlStructure = mysqlStructure;
-        this.#definition = definition;
+        this.#mysqlStructure = SchemaParams.sqlString;
+        this.#definition = SchemaParams.definition;
+        this.#methods = SchemaParams.methods;
     }
     find(_filterFileds, _showFileds){
         try{
@@ -108,7 +110,7 @@ class Document{
         try{
             let query = "SELECT";
 
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.#table} WHERE id = ${mysql.getInstance().escape(id)} LIMIT 1`;
+            query += ` ${getShowFileds(_showFileds)} FROM ${this.#table} WHERE id = ${pool.escape(id)} LIMIT 1`;
             this.#query.main = query;
 
             return this.exec();
@@ -121,27 +123,34 @@ class Document{
             let query = "INSERT INTO " + this.#table,
                 cols = "",
                 values = "";
-            
-            Object.keys(params).forEach((key, i)=>{
-                let value = mysql.getInstance().escape(params[key]);
-                // if(typeof value === 'string')
-                //     value = "'" + value + "'";
 
-                cols += `${key}${i !== Object.keys(params).length - 1?', ':''}`;
-                values += `${value}${i !== Object.keys(params).length - 1?', ':''}`;
-            });
-            
-            query += ` (${cols}) VALUES (${values})`;
+            const insert = () =>{
+                Object.keys(params).forEach((key, i)=>{
+                    let value = pool.escape(params[key]);
+                    // if(typeof value === 'string')
+                    //     value = "'" + value + "'";
+    
+                    cols += `${key}${i !== Object.keys(params).length - 1?', ':''}`;
+                    values += `${value}${i !== Object.keys(params).length - 1?', ':''}`;
+                });
+                
+                query += ` (${cols}) VALUES (${values})`;
+    
+                return this.#checkDb(()=>{
+                    return pool.execute(query)
+                        .then(()=>{
+                            return true;
+                        })
+                        .catch((err)=>{
+                            throw err;
+                        });
+                });
+            }
 
-            return this.#checkDb(()=>{
-                return mysql.getInstance().execute(query)
-                    .then(()=>{
-                        return true;
-                    })
-                    .catch((err)=>{
-                        throw err;
-                    });
-            });
+            if(this.#methods.insert)
+                this.#methods.insert(params, insert);
+            else
+                insert();            
         }catch(err){
             throw err;
         }
@@ -153,52 +162,61 @@ class Document{
                 cols = "",
                 checkCols = [];
 
-            const exists = (key)=>{
-                let isExists = false;
-
-                checkCols.forEach((res)=>{
-                    if(res === key){
-                        isExists = true;
-
-                        return true;
-                    }
-                })
-
-                return isExists;
-            }
-            
-            params.forEach((row, i)=>{
-                Object.keys(row).forEach((key, j)=>{
-                    if(!exists(key)){
-                        cols += `${key}${j !== Object.keys(row).length - 1?', ':''}`;
-                        
-                        checkCols.push(key);
-                    }
-                });
-            });
-            
-            params.forEach((row, i)=>{
-                checkCols.forEach((key, j)=>{
-                    let value = mysql.getInstance().escape(row[key] || '');
-
-                    // if(typeof value === 'string')
-                    //     value = "'" + value + "'";
+            const insert = () =>{
+                const exists = (key)=>{
+                    let isExists = false;
     
-                    values += `${j === 0?'(':''}${value}${j !== checkCols.length - 1?', ':i === params.length - 1?')':'), '}`;
-                });
-            });
-
-            query += ` (${cols}) VALUES ${values}`;
-
-            return this.#checkDb(()=>{
-                return mysql.getInstance().execute(query)
-                    .then(()=>{
-                        return true;
+                    checkCols.forEach((res)=>{
+                        if(res === key){
+                            isExists = true;
+    
+                            return true;
+                        }
                     })
-                    .catch((err)=>{
-                        throw err;
+    
+                    return isExists;
+                }
+                
+                params.forEach((row, i)=>{
+                    Object.keys(row).forEach((key, j)=>{
+                        if(!exists(key)){
+                            cols += `${key}${j !== Object.keys(row).length - 1?', ':''}`;
+                            
+                            checkCols.push(key);
+                        }
                     });
-            });
+                });
+                
+                params.forEach((row, i)=>{
+                    checkCols.forEach((key, j)=>{
+                        let value = pool.escape(row[key] || '');
+    
+                        // if(typeof value === 'string')
+                        //     value = "'" + value + "'";
+        
+                        values += `${j === 0?'(':''}${value}${j !== checkCols.length - 1?', ':i === params.length - 1?')':'), '}`;
+                    });
+                });
+    
+                query += ` (${cols}) VALUES ${values}`;
+    
+                return this.#checkDb(()=>{
+                    return pool.execute(query)
+                        .then(()=>{
+                            return true;
+                        })
+                        .catch((err)=>{
+                            throw err;
+                        });
+                });
+            }
+
+            if(this.#methods.insert){
+                params.forEach((obj, i)=>{
+                    this.#methods.insert(obj, ()=>{if(i === params.length - 1) insert();});
+                });
+            }else
+                insert();
         }catch(err){
             throw err;
         }
@@ -211,23 +229,30 @@ class Document{
                 let query = `UPDATE ${this.#table} SET`,
                     updateString = "";
                     
-                Object.keys(update).forEach((key, i)=>{
-                    let value = mysql.getInstance().escape(update[key]);
+                const insert = () =>{
+                    Object.keys(update).forEach((key, i)=>{
+                        let value = pool.escape(update[key]);
+    
+                        updateString += `${key} = ${value}${i !== Object.keys(update).length - 1?', ':''}`;
+                    });
+    
+                    query += ` ${updateString} ${filterFileds}`;
+    
+                    return this.#checkDb(()=>{
+                        return pool.execute(query)
+                            .then(()=>{
+                                return true;
+                            })
+                            .catch((err)=>{
+                                throw err;
+                            });
+                    });
+                }
 
-                    updateString += `${key} = ${value}${i !== Object.keys(update).length - 1?', ':''}`;
-                });
-
-                query += ` ${updateString} ${filterFileds}`;
-
-                return this.#checkDb(()=>{
-                    return mysql.getInstance().execute(query)
-                        .then(()=>{
-                            return true;
-                        })
-                        .catch((err)=>{
-                            throw err;
-                        });
-                });
+                if(this.#methods.update)
+                    this.#methods.update(update, insert);
+                else
+                    insert();
             }else if(filterFileds.trim() === "")
                 throw "Filter fileds aren't filled.";
             else if(Object.keys(update).length === 0)
@@ -242,23 +267,30 @@ class Document{
                 let query = `UPDATE ${this.#table} SET`,
                     updateString = "";
                     
-                Object.keys(update).forEach((key, i)=>{
-                    let value = mysql.getInstance().escape(update[key]);
+                const insert = () =>{
+                    Object.keys(update).forEach((key, i)=>{
+                        let value = pool.escape(update[key]);
+    
+                        updateString += `${key} = ${value}${i !== Object.keys(update).length - 1?', ':''}`;
+                    });
+    
+                    query += ` ${updateString} WHERE id = ${pool.escape(id)}`;
+    
+                    return this.#checkDb(()=>{
+                        return pool.execute(query)
+                            .then(()=>{
+                                return true;
+                            })
+                            .catch((err)=>{
+                                throw err;
+                            });
+                    });
+                }
 
-                    updateString += `${key} = ${value}${i !== Object.keys(update).length - 1?', ':''}`;
-                });
-
-                query += ` ${updateString} WHERE id = ${mysql.getInstance().escape(id)}`;
-
-                return this.#checkDb(()=>{
-                    return mysql.getInstance().execute(query)
-                        .then(()=>{
-                            return true;
-                        })
-                        .catch((err)=>{
-                            throw err;
-                        });
-                });
+                if(this.#methods.update)
+                    this.#methods.update(update, insert);
+                else
+                    insert();
             }else if(!id)
                 throw "ID isn't filled."
             else if(Object.keys(update).length === 0)
@@ -275,7 +307,7 @@ class Document{
                 let query = `DELETE FROM ${this.#table} ${filterFileds}`;
 
                 return this.#checkDb(()=>{
-                    return mysql.getInstance().execute(query)
+                    return pool.execute(query)
                         .then(()=>{
                             return true;
                         })
@@ -292,10 +324,10 @@ class Document{
     findByIdAndDelete(id){
         try{
             if(id){
-                let query = `DELETE FROM ${this.#table} WHERE id = ${mysql.getInstance().escape(id)}`;
+                let query = `DELETE FROM ${this.#table} WHERE id = ${pool.escape(id)}`;
                 
                 return this.#checkDb(()=>{
-                    return mysql.getInstance().execute(query)
+                    return pool.execute(query)
                         .then(()=>{
                             return true;
                         })
@@ -353,7 +385,7 @@ class Document{
         
             
             return this.#checkDb(()=>{
-                return mysql.getInstance().execute(query).then(([res])=>{
+                return pool.execute(query).then(([res])=>{
                     return res[0]['COUNT(*)'];
                 });
             });
@@ -368,7 +400,7 @@ class Document{
             let query = main + sort + limit + (limit !== ''?skip:'');
 
             return this.#checkDb(()=>{
-                return mysql.getInstance().execute(query)
+                return pool.execute(query)
                     .then(([rows])=>{
                         this.#query.main = {
                             main: "",
@@ -386,7 +418,7 @@ class Document{
             throw "Order Error: .find().exec()";
     }
     #checkDb = (next) => {
-        return mysql.getInstance().execute(`CREATE TABLE IF NOT EXISTS ${this.#table} (${this.#mysqlStructure})`)
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.#table} (${this.#mysqlStructure})`)
             .then(()=>{
                 return next();
             })

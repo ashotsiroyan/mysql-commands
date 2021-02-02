@@ -13,7 +13,7 @@ async function connect({host, user, password, database}){
 }
 
 function model(table, Schema) {
-    return new Document(table, Schema.getMysqlString(), Schema.getDefinition());
+    return new Document(table, Schema.getParams());
 }
 
 module.exports = {
