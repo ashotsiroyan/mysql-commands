@@ -1,5 +1,4 @@
 const dataTypes = require('./assets/dataTypes');
-const mysql = require('./mysql');
 
 class Schema{
     #mysql = "";

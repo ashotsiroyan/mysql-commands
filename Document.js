@@ -1,82 +1,65 @@
 const mysql = require('./mysql');
+const actions = require('./assets/actions');
 
-const actions = {
-    $lt: '<',
-    $gt: '>',
-    $lte: '<=',
-    $gte: '>=',
-    $eq: '=',
-    $ne: '!=',
-    $in: 'LIKE',
-    $nin: 'NOT LIKE'
-}
-
-function getFilterFileds(_filterFileds){
+function getFilterFileds(arg) {
     let filterFileds = "";
 
-    if(_filterFileds){
-        Object.keys(_filterFileds).forEach((field, i)=>{
-            if(typeof _filterFileds[field] === 'object'){
-                let withActions = '';
+    const closer = ({params, prevField = null}) =>{
+        if(params){
+            Object.keys(params).forEach((field, i)=>{
+                if(typeof params[field] === 'object'){
+                    if(field === '$or' || field === '$and'){
+                        params[field].forEach((option, j)=>{
+                            filterFileds += "(";
+                            closer({params: option});
+                            if(filterFileds.slice(-5) === ' AND ')
+                                filterFileds = filterFileds.slice(0, -5);
 
-                if(field === '$or' || field === '$and'){
-                    _filterFileds[field].forEach((option, k)=>{
-                        Object.keys(option).forEach((subField, j)=>{                         
-                            if(typeof option[subField] === 'object'){
-                                Object.keys(option[subField]).forEach((action, p)=>{
-                                    let value = option[subField][action];
-                                    // if(typeof value === 'string')
-                                    //     value = "'" + value + "'";
-
-                                    withActions += `${subField} ${actions[action]} ${mysql.getInstance().escape(value)}${p !== Object.keys(option[subField]).length - 1?' AND ':''}`
-                                });
-                            }else {
-                                let value = option[subField];
-                                // if(typeof value === 'string')
-                                //     value = "'" + value + "'";
-
-                                withActions += `${subField} = ${mysql.getInstance().escape(value)}${j !== Object.keys(option).length - 1?' AND ':''}`;
-                            }
+                            filterFileds += `)${j !== params[field].length - 1?` ${field === '$or'?"OR": "AND"} `:""}`;
                         });
-                        
-                        if(k === 1)
-                            withActions = "(" + withActions;
-
-                        withActions += k !== Object.keys(_filterFileds[field]).length - 1?field === '$or'?') OR (':') AND (':')';
-                    });
+                    }else{
+                        if(!Array.isArray(params[field])){
+                            closer({params: params[field], prevField: field});
+                        }
+                        else if(field === '$in' || field === '$nin'){
+                            params[field].forEach((value)=>{
+                                filterFileds += `${prevField} ${actions[field]} ${mysql.getInstance().escape(value)} AND `;
+                            });
+                        }
+                    }
                 }else{
-                    Object.keys(_filterFileds[field]).forEach((action, j)=>{
-                        let value = _filterFileds[field][action];
-                        // if(typeof value === 'string')
-                        //     value = "'" + value + "'";
+                    let value = params[field];
+                    // if(typeof value === 'string')
+                    //     value = "'" + value + "'";
 
-                        withActions += `${field} ${actions[action]} ${mysql.getInstance().escape(value)}${j !== Object.keys(_filterFileds[field]).length - 1?' AND ':''}`
-                    });
+                    if(field[0] === '$'){
+                        filterFileds += `${prevField} ${actions[field]} ${mysql.getInstance().escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                    }else{
+                        filterFileds += `${field} = ${mysql.getInstance().escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                    }
                 }
-
-                filterFileds += `${withActions}${i !== Object.keys(_filterFileds).length - 1?' AND ':''}`;
-            }else{
-                let value = _filterFileds[field];
-                // if(typeof value === 'string')
-                //     value = "'" + value + "'";
-
-                filterFileds += `${field} = ${mysql.getInstance().escape(value)}${i !== Object.keys(_filterFileds).length - 1?' AND ':''}`;
-            }
-        });
-
-        if(filterFileds.trim() !== "")
-            filterFileds = "WHERE " + filterFileds;
+            });
+        }
     }
+
+    closer({params: arg});
+
+    if(filterFileds.slice(-5) === ' AND ')
+        filterFileds = filterFileds.slice(0, -5);
+
+
+    if(filterFileds.trim() !== "")
+        filterFileds = "WHERE " + filterFileds;
 
     return filterFileds;
 }
 
-function getShowFileds(_showFileds){
-    let showFileds = _showFileds && _showFileds.length > 0?"":"*";
+function getShowFileds(arg){
+    let showFileds = arg && arg.length > 0?"":"*";
 
-    if(_showFileds && _showFileds.length > 0)
-        _showFileds.forEach((field, i)=>{
-            showFileds += `${field}${i !== _showFileds.length - 1?', ':''}`;
+    if(arg && arg.length > 0)
+        arg.forEach((field, i)=>{
+            showFileds += `${field}${i !== arg.length - 1?', ':''}`;
         });
 
     return showFileds;
