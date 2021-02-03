@@ -2,24 +2,30 @@ const dataTypes = require('./assets/dataTypes');
 
 class Schema{
     #mysql = "";
+    #options;
     #definition;
     #methods = {}
-    constructor(props){
-        this.#definition = props;
+    constructor(definition = {}, options = {}){
+        this.#definition = definition;
+        this.#options = options;
 
         this.#convertToString();
     }
     getParams(){
         return {
             sqlString: this.#mysql,
-            definition: this.#definition,
-            methods: this.#methods
+            definition: Object.keys(this.#definition),
+            methods: this.#methods,
+            options: this.#options
         }
     }
     pre(method, callBack){
         this.#methods[method] = callBack;
     }
     #convertToString = () =>{
+        if(this.#options.id === undefined || this.#options.id)
+            this.#definition = {_id: {type: 'VARCHAR', length: 24}, ...this.#definition}
+
         Object.keys(this.#definition).forEach((field, i)=>{
             let option = this.#definition[field];
             this.#mysql += `${field} `;
