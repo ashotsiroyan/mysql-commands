@@ -1,53 +1,48 @@
 const {pool} = require('./mysql');
-const ObjectId = require('./assets/ObjectId');
+const ObjectId = require('./plugins/ObjectId');
 
 class Document{
     #preSave;
     #checkDb;
-    #definition;
+    #schema;
     #table;
     #isNew;
-    constructor({doc, definition, options, preSave, checkDb, table, isNew = false}){
+    constructor({doc, schema, options, preSave, checkDb, table, isNew = false}){
         this.#preSave = preSave;
         this.#checkDb = checkDb;
-        this.#definition = definition;
+        this.#schema = schema;
         this.#table = table;
         this.#isNew = isNew;
 
         this.#convertData({doc, options});
     }
-    #convertData = ({doc, options}) =>{
-        const hasId = options.id === undefined || options.id?true:false;
-
-        this.#definition.forEach((key)=>{
-            let value = doc[key]?doc[key]:hasId && key === '_id'?ObjectId():'';
-
-            this[key] = value;
-        });
-    }
-    isNew(){
+    get isNew(){
         return this.#isNew;
+    }
+    get schema(){
+        return this.#schema;
     }
     save(){
         try{
-            let query = this.isNew()?"INSERT INTO " + this.#table:`UPDATE ${this.#table} SET`,
+            let query = this.isNew?"INSERT INTO " + this.#table:`UPDATE ${this.#table} SET`,
                 cols = "",
                 values = "",
                 updateString = "";
 
             const insert = () =>{
-                this.#definition.forEach((key, i)=>{
+                let keys = Object.keys(this.schema);
+                keys.forEach((key, i)=>{
                     let value = pool.escape(this[key]);
     
-                    if(this.isNew()){
-                        cols += `${key}${i !== this.#definition.length - 1?', ':''}`;
-                        values += `${value}${i !== this.#definition.length - 1?', ':''}`;
+                    if(this.isNew){
+                        cols += `${key}${i !== keys.length - 1?', ':''}`;
+                        values += `${value}${i !== keys.length - 1?', ':''}`;
                     }else if(key !== '_id'){
-                        updateString += `${key} = ${value}${i !== this.#definition.length - 1?', ':''}`;
+                        updateString += `${key} = ${value}${i !== keys.length - 1?', ':''}`;
                     }
                 });
                 
-                if(this.isNew())
+                if(this.isNew)
                     query += ` (${cols}) VALUES (${values})`;
                 else
                     query += ` ${updateString} WHERE _id = ${pool.escape(this._id)}`;
@@ -70,6 +65,17 @@ class Document{
         }catch(err){
             throw err;
         }
+    }
+    #convertData = ({doc, options}) =>{
+        const hasId = options._id === undefined || options._id?true:false;
+
+        let keys = Object.keys(this.schema);
+        keys.forEach((key)=>{
+            let defaultValue = this.schema[key].default;
+            let value = doc[key]?doc[key]:defaultValue?defaultValue:key === '_id' && hasId?ObjectId():'';
+
+            this[key] = value;
+        });
     }
 }
 

@@ -1,6 +1,6 @@
 const {pool} = require('./mysql');
-const actions = require('./assets/actions');
-const ObjectId = require('./assets/ObjectId');
+const actions = require('./plugins/actions');
+const ObjectId = require('./plugins/ObjectId');
 const Document = require('./Document');
 
 function getFilterFileds(arg) {
@@ -68,31 +68,36 @@ function getShowFileds(arg){
 }
 
 class Model{
-    #table;
     #mysqlStructure;
-    #definition;
     #methods;
-    #options;
     #query = {
         main: "",
         skip: "",
         sort: "",
         limit: "",
     };
+    #documentParams = {}
     constructor(table, SchemaParams){
-        this.#table = table;
         this.#mysqlStructure = SchemaParams.sqlString;
-        this.#definition = SchemaParams.definition;
         this.#methods = SchemaParams.methods;
-        this.#options = SchemaParams.options;
+
+        this.#documentParams = {
+            schema: SchemaParams.definition,
+            options: SchemaParams.options,
+            preSave: this.#methods.save,
+            table: table
+        }
+    }
+    get schema(){
+        return this.#documentParams.schema;
+    }
+    get tableName(){
+        return this.#documentParams.table;
     }
     new(doc = {}){
         return new Document({
             doc,
-            definition: this.#definition,
-            options: this.#options,
-            preSave: this.#methods.save,
-            table: this.#table,
+            ...this.#documentParams,
             checkDb: this.#checkDb,
             isNew: true
         });
@@ -101,7 +106,7 @@ class Model{
         try{
             let query = "SELECT";
 
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.#table} ${getFilterFileds(_filterFileds)}`;
+            query += ` ${getShowFileds(_showFileds)} FROM ${this.tableName} ${getFilterFileds(_filterFileds)}`;
             this.#query.main = query;
 
             return this;
@@ -113,7 +118,7 @@ class Model{
         try{
             let query = "SELECT";
 
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.#table} ${getFilterFileds(_filterFileds)} LIMIT 1`;
+            query += ` ${getShowFileds(_showFileds)} FROM ${this.tableName} ${getFilterFileds(_filterFileds)} LIMIT 1`;
             this.#query.main = query;
 
             return this.exec();
@@ -125,7 +130,7 @@ class Model{
         try{
             let query = "SELECT";
 
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.#table} WHERE _id = ${pool.escape(id)} LIMIT 1`;
+            query += ` ${getShowFileds(_showFileds)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
             this.#query.main = query;
 
             return this.exec();
@@ -135,58 +140,37 @@ class Model{
     }
     insertOne(params = {}){
         try{
-            let query = "INSERT INTO " + this.#table,
-                cols = "",
-                values = "";
-            
-            const hasId = this.#options.id === undefined || this.#options.id?true:false;
+            const document = new Document({
+                doc: params,
+                ...this.#documentParams,
+                checkDb: this.#checkDb,
+                isNew: true
+            });
 
-            const insert = () =>{
-                this.#definition.forEach((key, i)=>{
-                    let value = pool.escape(params[key]?params[key]:hasId && key === '_id'?ObjectId():'');
-    
-                    cols += `${key}${i !== this.#definition.length - 1?', ':''}`;
-                    values += `${value}${i !== this.#definition.length - 1?', ':''}`;
-                });
-                
-                query += ` (${cols}) VALUES (${values})`;
-    
-                return this.#checkDb(()=>{
-                    return pool.execute(query)
-                        .then(()=>{
-                            return true;
-                        })
-                        .catch((err)=>{
-                            throw err;
-                        });
-                });
-            }
-
-            if(this.#methods.insert)
-                this.#methods.insert(params, insert);
-            else
-                insert();            
+            return document.save();
         }catch(err){
             throw err;
         }
     }
     insertMany(params = []){
         try{
-            let query = "INSERT INTO " + this.#table,
+            let query = "INSERT INTO " + this.tableName,
                 values = "",
                 cols = "";
 
-            const hasId = this.#options.id === undefined || this.#options.id?true:false;
+            const hasId = this.#documentParams.options._id === undefined || this.#documentParams.options._id?true:false;
 
-            const insert = () =>{                
+            const insert = () =>{       
+                let keys = Object.keys(this.schema);         
                 params.forEach((row, i)=>{
-                    this.#definition.forEach((key, j)=>{
-                        let value = pool.escape(row[key]?row[key]:hasId && key === '_id'?ObjectId():'');
+                    keys.forEach((key, j)=>{
+                        let defaultValue = this.schema[key].default;
+                        let value = pool.escape(row[key]?row[key]:defaultValue?defaultValue:key === '_id' && hasId?ObjectId():'');
         
                         if(i === 0)
-                            cols += `${key}${j !== this.#definition.length - 1?', ':''}`;
+                            cols += `${key}${j !== keys.length - 1?', ':''}`;
 
-                        values += `${j === 0?'(':''}${value}${j !== this.#definition.length - 1?', ':i === params.length - 1?')':'), '}`;
+                        values += `${j === 0?'(':''}${value}${j !== keys.length - 1?', ':i === params.length - 1?')':'), '}`;
                     });
                 });
     
@@ -203,9 +187,9 @@ class Model{
                 });
             }
 
-            if(this.#methods.insert){
+            if(this.#methods.save){
                 params.forEach((obj, i)=>{
-                    this.#methods.insert(obj, ()=>{if(i === params.length - 1) insert();});
+                    this.#methods.save(obj, ()=>{if(i === params.length - 1) insert();});
                 });
             }else
                 insert();
@@ -218,7 +202,7 @@ class Model{
             let filterFileds = getFilterFileds(_filterFileds);
 
             if(filterFileds.trim() !== "" && Object.keys(update).length > 0){
-                let query = `UPDATE ${this.#table} SET`,
+                let query = `UPDATE ${this.tableName} SET`,
                     updateString = "";
                     
                 const insert = () =>{
@@ -256,7 +240,7 @@ class Model{
     findByIdAndUpdate(id, update = {}){
         try{
             if(id && Object.keys(update).length > 0){
-                let query = `UPDATE ${this.#table} SET`,
+                let query = `UPDATE ${this.tableName} SET`,
                     updateString = "";
                     
                 const insert = () =>{
@@ -296,7 +280,7 @@ class Model{
             let filterFileds = getFilterFileds(_filterFileds);
 
             if(filterFileds.trim() !== ""){
-                let query = `DELETE FROM ${this.#table} ${filterFileds}`;
+                let query = `DELETE FROM ${this.tableName} ${filterFileds}`;
 
                 return this.#checkDb(()=>{
                     return pool.execute(query)
@@ -316,7 +300,7 @@ class Model{
     findByIdAndDelete(id){
         try{
             if(id){
-                let query = `DELETE FROM ${this.#table} WHERE _id = ${pool.escape(id)}`;
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(id)}`;
                 
                 return this.#checkDb(()=>{
                     return pool.execute(query)
@@ -371,9 +355,9 @@ class Model{
         return this;
     
     }
-    countRows(_filterFileds){
+    countDocuments(_filterFileds){
         try{
-            let query = `SELECT COUNT(*) FROM ${this.#table} ${getFilterFileds(_filterFileds)}`;
+            let query = `SELECT COUNT(*) FROM ${this.tableName} ${getFilterFileds(_filterFileds)}`;
         
             
             return this.#checkDb(()=>{
@@ -404,10 +388,7 @@ class Model{
                         return rows.map((row)=>{
                             return new Document({
                                 doc: row,
-                                definition: this.#definition,
-                                options: this.#options,
-                                preSave: this.#methods.save,
-                                table: this.#table,
+                                ...this.#documentParams,
                                 checkDb: this.#checkDb
                             });
                         });
@@ -420,7 +401,7 @@ class Model{
             throw "Order Error: .find().exec()";
     }
     #checkDb = (next) => {
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.#table} (${this.#mysqlStructure})`)
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.#mysqlStructure})`)
             .then(()=>{
                 return next();
             })
