@@ -6,11 +6,13 @@ class Document{
     #checkDb;
     #definition;
     #table;
-    constructor({doc, definition, options, preSave, checkDb, table}){
+    #isNew;
+    constructor({doc, definition, options, preSave, checkDb, table, isNew = false}){
         this.#preSave = preSave;
         this.#checkDb = checkDb;
         this.#definition = definition;
         this.#table = table;
+        this.#isNew = isNew;
 
         this.#convertData({doc, options});
     }
@@ -23,21 +25,32 @@ class Document{
             this[key] = value;
         });
     }
+    isNew(){
+        return this.#isNew;
+    }
     save(){
         try{
-            let query = "INSERT INTO " + this.#table,
+            let query = this.isNew()?"INSERT INTO " + this.#table:`UPDATE ${this.#table} SET`,
                 cols = "",
-                values = "";
+                values = "",
+                updateString = "";
 
             const insert = () =>{
                 this.#definition.forEach((key, i)=>{
                     let value = pool.escape(this[key]);
     
-                    cols += `${key}${i !== this.#definition.length - 1?', ':''}`;
-                    values += `${value}${i !== this.#definition.length - 1?', ':''}`;
+                    if(this.isNew()){
+                        cols += `${key}${i !== this.#definition.length - 1?', ':''}`;
+                        values += `${value}${i !== this.#definition.length - 1?', ':''}`;
+                    }else if(key !== '_id'){
+                        updateString += `${key} = ${value}${i !== this.#definition.length - 1?', ':''}`;
+                    }
                 });
                 
-                query += ` (${cols}) VALUES (${values})`;
+                if(this.isNew())
+                    query += ` (${cols}) VALUES (${values})`;
+                else
+                    query += ` ${updateString} WHERE _id = ${pool.escape(this._id)}`;
 
                 return this.#checkDb(()=>{
                     return pool.execute(query)

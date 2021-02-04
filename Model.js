@@ -93,7 +93,8 @@ class Model{
             options: this.#options,
             preSave: this.#methods.save,
             table: this.#table,
-            checkDb: this.#checkDb
+            checkDb: this.#checkDb,
+            isNew: true
         });
     }
     find(_filterFileds, _showFileds){
@@ -399,7 +400,17 @@ class Model{
                             sort: "",
                             limit: ""
                         };
-                        return rows;
+
+                        return rows.map((row)=>{
+                            return new Document({
+                                doc: row,
+                                definition: this.#definition,
+                                options: this.#options,
+                                preSave: this.#methods.save,
+                                table: this.#table,
+                                checkDb: this.#checkDb
+                            });
+                        });
                     })
                     .catch((err)=>{
                         throw err;
