@@ -95,7 +95,7 @@ class Schema{
                 Object.keys(option).forEach((key, j)=>{
                     if(key === 'null')
                         this.#mysql += `${!option[key]?"NOT ":""}NULL`; 
-                    else if(key === 'autoIncrement' && option[key])
+                    else if(key === 'autoinc' && option[key])
                         this.#mysql += `AUTO_INCREMENT PRIMARY KEY`; 
                     else if((key === 'primaryKey' || key === 'unsigned' || key === 'unique') && option[key])
                         this.#mysql += `${key === 'primaryKey'?'PRIMARY KEY':key === 'unsigned'?'UNSIGNED':'UNIQUE KEY'}`;

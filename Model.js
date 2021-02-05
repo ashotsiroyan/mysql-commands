@@ -3,7 +3,7 @@ const actions = require('./plugins/actions');
 const ObjectId = require('./plugins/ObjectId');
 const Document = require('./Document');
 
-function getFilterFileds(arg) {
+function getConditions(arg) {
     let filterFileds = "";
 
     const closer = ({params, prevField = null}) =>{
@@ -56,7 +56,7 @@ function getFilterFileds(arg) {
     return filterFileds;
 }
 
-function getShowFileds(arg){
+function getFileds(arg){
     let showFileds = arg && arg.length > 0?"":"*";
 
     if(arg && arg.length > 0)
@@ -75,6 +75,7 @@ class Model{
         skip: "",
         sort: "",
         limit: "",
+        err: null
     };
     #documentParams = {}
     constructor(table, SchemaParams){
@@ -102,43 +103,35 @@ class Model{
             isNew: true
         });
     }
-    find(_filterFileds, _showFileds){
-        try{
+    find(conditions, fields){
+        let query = "SELECT";
+
+        query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`;
+        this.#query.main = query;
+
+        return this;
+    }
+    findOne(conditions, fields){
+        let query = "SELECT";
+
+        query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`;
+        this.#query.main = query;
+
+        return this;
+    }
+    findById(id, fields){
+        if(id){
             let query = "SELECT";
-
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.tableName} ${getFilterFileds(_filterFileds)}`;
+    
+            query += ` ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
             this.#query.main = query;
-
+    
             return this;
-        }catch(err){
-            throw err;
+        }else{
+            this.#query.err = "ID isn't filled."
         }
     }
-    findOne(_filterFileds, _showFileds){
-        try{
-            let query = "SELECT";
-
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.tableName} ${getFilterFileds(_filterFileds)} LIMIT 1`;
-            this.#query.main = query;
-
-            return this.exec();
-        }catch(err){
-            throw err;
-        }
-    }
-    findById(id, _showFileds){
-        try{
-            let query = "SELECT";
-
-            query += ` ${getShowFileds(_showFileds)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
-            this.#query.main = query;
-
-            return this.exec();
-        }catch(err){
-            throw err;
-        }
-    }
-    insertOne(params = {}){
+    insertOne(params = {}, callback){
         try{
             const document = new Document({
                 doc: params,
@@ -147,12 +140,15 @@ class Model{
                 isNew: true
             });
 
-            return document.save();
+            return document.save(callback);
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
-    insertMany(params = []){
+    insertMany(params = [], callback){
         try{
             let query = "INSERT INTO " + this.tableName,
                 values = "",
@@ -179,7 +175,10 @@ class Model{
                 return this.#checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
-                            return true;
+                            if(callback)
+                                callback(null);
+                            else
+                                return true;
                         })
                         .catch((err)=>{
                             throw err;
@@ -194,12 +193,15 @@ class Model{
             }else
                 insert();
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
-    findAndUpdate(_filterFileds, update = {}){
+    findAndUpdate(conditions, update = {}, callback){
         try{
-            let filterFileds = getFilterFileds(_filterFileds);
+            let filterFileds = getConditions(conditions);
 
             if(filterFileds.trim() !== "" && Object.keys(update).length > 0){
                 let query = `UPDATE ${this.tableName} SET`,
@@ -217,7 +219,10 @@ class Model{
                     return this.#checkDb(()=>{
                         return pool.execute(query)
                             .then(()=>{
-                                return true;
+                                if(callback)
+                                    callback(null);
+                                else
+                                    return true;
                             })
                             .catch((err)=>{
                                 throw err;
@@ -234,10 +239,13 @@ class Model{
             else if(Object.keys(update).length === 0)
                 throw "Update fileds aren't filled.";
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
-    findByIdAndUpdate(id, update = {}){
+    findByIdAndUpdate(id, update = {}, callback){
         try{
             if(id && Object.keys(update).length > 0){
                 let query = `UPDATE ${this.tableName} SET`,
@@ -255,7 +263,10 @@ class Model{
                     return this.#checkDb(()=>{
                         return pool.execute(query)
                             .then(()=>{
-                                return true;
+                                if(callback)
+                                    callback(null);
+                                else
+                                    return true;
                             })
                             .catch((err)=>{
                                 throw err;
@@ -272,12 +283,15 @@ class Model{
             else if(Object.keys(update).length === 0)
                 throw "Update fileds aren't filled.";
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
-    findAndDelete(_filterFileds){
+    findAndDelete(conditions, callback){
         try{
-            let filterFileds = getFilterFileds(_filterFileds);
+            let filterFileds = getConditions(conditions);
 
             if(filterFileds.trim() !== ""){
                 let query = `DELETE FROM ${this.tableName} ${filterFileds}`;
@@ -285,7 +299,10 @@ class Model{
                 return this.#checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
-                            return true;
+                            if(callback)
+                                callback(null);
+                            else
+                                return true;
                         })
                         .catch((err)=>{
                             throw err;
@@ -294,10 +311,13 @@ class Model{
             }else
                 throw "Filter fileds aren't filled.";
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
-    findByIdAndDelete(id){
+    findByIdAndDelete(id, callback){
         try{
             if(id){
                 let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(id)}`;
@@ -305,7 +325,10 @@ class Model{
                 return this.#checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
-                            return true;
+                            if(callback)
+                                callback(null);
+                            else
+                                return true;
                         })
                         .catch((err)=>{
                             throw err;
@@ -315,7 +338,10 @@ class Model{
             else
                 throw "ID isn't filled."
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
     limit(val){
@@ -324,7 +350,7 @@ class Model{
                 this.#query.limit = " LIMIT " + val;
             }
         }else
-            throw "Order Error: .find().limit()";
+            this.#query.err = "Order Error: .find().limit()";
 
         return this;
     }
@@ -334,7 +360,7 @@ class Model{
                 this.#query.skip = " OFFSET " + val;
             }
         }else
-            throw "Order Error: .find().skip()";
+            this.#query.err = "Order Error: .find().skip()";
         
         return this;
     }
@@ -350,55 +376,86 @@ class Model{
                 this.#query.sort = query;
             }
         }else
-            throw "Order Error: .find().sort()";
+            this.#query.err = "Order Error: .find().sort()";
         
         return this;
-    
     }
-    countDocuments(_filterFileds){
+    countDocuments(conditions = {}, callback){
         try{
-            let query = `SELECT COUNT(*) FROM ${this.tableName} ${getFilterFileds(_filterFileds)}`;
+            let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
         
-            
             return this.#checkDb(()=>{
                 return pool.execute(query).then(([res])=>{
-                    return res[0]['COUNT(*)'];
+                    let count = res[0]['COUNT(*)'];
+
+                    if(callback)
+                        callback(null, count);
+                    else
+                        return count;
                 });
             });
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
-    exec(){
-        let {main, limit, sort, skip} = this.#query;
+    exec(callback){
+        try{
+            if(this.#query.err)
+                throw this.#query.err;
 
-        if(main !== ""){
-            let query = main + sort + limit + (limit !== ''?skip:'');
+            let {main, limit, sort, skip} = this.#query;
 
-            return this.#checkDb(()=>{
-                return pool.execute(query)
-                    .then(([rows])=>{
-                        this.#query.main = {
-                            main: "",
-                            skip: "",
-                            sort: "",
-                            limit: ""
-                        };
+            if(main !== ""){
+                let query = main + sort + limit + (limit !== ''?skip:'');
 
-                        return rows.map((row)=>{
-                            return new Document({
-                                doc: row,
-                                ...this.#documentParams,
-                                checkDb: this.#checkDb
+                return this.#checkDb(()=>{
+                    return pool.execute(query)
+                        .then(([rows])=>{
+                            this.#query.main = {
+                                main: "",
+                                skip: "",
+                                sort: "",
+                                limit: "",
+                                err: null
+                            };
+
+                            let res = rows.map((row)=>{
+                                return new Document({
+                                    doc: row,
+                                    ...this.#documentParams,
+                                    checkDb: this.#checkDb
+                                });
                             });
+    
+                            if(callback)
+                                callback(null, res);
+                            else
+                                return res;
+                        })
+                        .catch((err)=>{
+                            throw err;
                         });
-                    })
-                    .catch((err)=>{
-                        throw err;
-                    });
-            });
-        }else
-            throw "Order Error: .find().exec()";
+                });
+            }else{
+                throw "Order Error: .find().exec()";
+            }
+        }catch(err){
+            this.#query.main = {
+                main: "",
+                skip: "",
+                sort: "",
+                limit: "",
+                err: null
+            };
+
+            if(callback)
+                callback(err);
+            else
+                throw err;
+        }
     }
     #checkDb = (next) => {
         return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.#mysqlStructure})`)

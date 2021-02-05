@@ -22,7 +22,7 @@ class Document{
     get schema(){
         return this.#schema;
     }
-    save(){
+    save(callback){
         try{
             let query = this.isNew?"INSERT INTO " + this.#table:`UPDATE ${this.#table} SET`,
                 cols = "",
@@ -50,7 +50,10 @@ class Document{
                 return this.#checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
-                            return true;
+                            if(callback)
+                                callback(null);
+                            else
+                                return true;
                         })
                         .catch((err)=>{
                             throw err;
@@ -63,7 +66,10 @@ class Document{
             else
                 insert();            
         }catch(err){
-            throw err;
+            if(callback)
+                callback(err);
+            else
+                throw err;
         }
     }
     #convertData = ({doc, options}) =>{
