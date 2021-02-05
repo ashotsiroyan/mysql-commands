@@ -62,9 +62,14 @@ class Schema{
         this.#mysql += ', ' + sqlString;
     }
     #convertToString = () =>{
-        if(this.#options.id === undefined || this.#options.id)
-            this.#definition = {_id: {type: 'VARCHAR', length: 24, primaryKey: true}, ...this.#definition}
+        const hasId = this.#options._id === undefined || this.#options._id?true:false;
 
+        if(hasId)
+            this.#definition = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.#definition};
+
+        if(this.#options.timestamps)
+            this.#definition = {...this.#definition, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
+            
         Object.keys(this.#definition).forEach((field, i)=>{
             let option = this.#definition[field];
             this.#mysql += `${field} `;
@@ -96,7 +101,7 @@ class Schema{
                     if(key === 'null')
                         this.#mysql += `${!option[key]?"NOT ":""}NULL`; 
                     else if(key === 'autoinc' && option[key])
-                        this.#mysql += `AUTO_INCREMENT PRIMARY KEY`; 
+                        this.#mysql += `AUTO_INCREMENT ${!hasId?'PRIMARY':'UNIQUE'} KEY`; 
                     else if((key === 'primaryKey' || key === 'unsigned' || key === 'unique') && option[key])
                         this.#mysql += `${key === 'primaryKey'?'PRIMARY KEY':key === 'unsigned'?'UNSIGNED':'UNIQUE KEY'}`;
 

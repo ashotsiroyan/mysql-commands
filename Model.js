@@ -160,8 +160,18 @@ class Model{
                 let keys = Object.keys(this.schema);         
                 params.forEach((row, i)=>{
                     keys.forEach((key, j)=>{
-                        let defaultValue = this.schema[key].default;
-                        let value = pool.escape(row[key]?row[key]:defaultValue?defaultValue:key === '_id' && hasId?ObjectId():'');
+                        let defaultValue = this.schema[key].default,
+                            value = '';
+
+                        if(row[key])
+                            value = row[key];
+                        else if(defaultValue)
+                            value = defaultValue;
+
+                        if(hasId && key === '_id')
+                            value = ObjectId();
+
+                        value = pool.escape(value);
         
                         if(i === 0)
                             cols += `${key}${j !== keys.length - 1?', ':''}`;
@@ -208,13 +218,22 @@ class Model{
                     updateString = "";
                     
                 const insert = () =>{
-                    Object.keys(update).forEach((key, i)=>{
-                        let value = pool.escape(update[key]);
-    
-                        updateString += `${key} = ${value}${i !== Object.keys(update).length - 1?', ':''}`;
+                    Object.keys(this.schema).forEach((key)=>{
+                        if(key !== '_id' && key !== 'id'){
+                            let value = update[key];
+
+                            if(this.#documentParams.options.timestamps && key === '_updatedAt')
+                                value = new Date();
+        
+                            if(value){
+                                value = pool.escape(value);
+
+                                updateString += `${key} = ${value}, `;
+                            }
+                        }
                     });
     
-                    query += ` ${updateString} ${filterFileds}`;
+                    query += ` ${updateString.slice(0, -2)} ${filterFileds}`;
     
                     return this.#checkDb(()=>{
                         return pool.execute(query)
@@ -252,13 +271,22 @@ class Model{
                     updateString = "";
                     
                 const insert = () =>{
-                    Object.keys(update).forEach((key, i)=>{
-                        let value = pool.escape(update[key]);
-    
-                        updateString += `${key} = ${value}${i !== Object.keys(update).length - 1?', ':''}`;
+                    Object.keys(this.schema).forEach((key)=>{
+                        if(key !== '_id' && key !== 'id'){
+                            let value = update[key];
+
+                            if(this.#documentParams.options.timestamps && key === '_updatedAt')
+                                value = new Date();
+        
+                            if(value){
+                                value = pool.escape(value);
+
+                                updateString += `${key} = ${value}, `;
+                            }
+                        }
                     });
-    
-                    query += ` ${updateString} WHERE _id = ${pool.escape(id)}`;
+
+                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(id)}`;
     
                     return this.#checkDb(()=>{
                         return pool.execute(query)

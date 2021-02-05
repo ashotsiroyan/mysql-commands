@@ -6,15 +6,17 @@ class Document{
     #checkDb;
     #schema;
     #table;
+    #options;
     #isNew;
     constructor({doc, schema, options, preSave, checkDb, table, isNew = false}){
         this.#preSave = preSave;
         this.#checkDb = checkDb;
         this.#schema = schema;
+        this.#options = options;
         this.#table = table;
         this.#isNew = isNew;
 
-        this.#convertData({doc, options});
+        this.#convertData({doc});
     }
     get isNew(){
         return this.#isNew;
@@ -31,21 +33,26 @@ class Document{
 
             const insert = () =>{
                 let keys = Object.keys(this.schema);
-                keys.forEach((key, i)=>{
-                    let value = pool.escape(this[key]);
+                keys.forEach((key)=>{
+                    let value = this[key];
+
+                    if(!this.isNew && this.#options.timestamps && key === '_updatedAt')
+                        value = new Date();
+
+                    value = pool.escape(value);
     
                     if(this.isNew){
-                        cols += `${key}${i !== keys.length - 1?', ':''}`;
-                        values += `${value}${i !== keys.length - 1?', ':''}`;
-                    }else if(key !== '_id'){
-                        updateString += `${key} = ${value}${i !== keys.length - 1?', ':''}`;
+                        cols += `${key}, `;
+                        values += `${value}, `;
+                    }else if(key !== '_id' && key !== 'id'){
+                        updateString += `${key} = ${value}, `;
                     }
                 });
                 
                 if(this.isNew)
-                    query += ` (${cols}) VALUES (${values})`;
+                    query += ` (${cols.slice(0, -2)}) VALUES (${values.slice(0, -2)})`;
                 else
-                    query += ` ${updateString} WHERE _id = ${pool.escape(this._id)}`;
+                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this._id)}`;
 
                 return this.#checkDb(()=>{
                     return pool.execute(query)
@@ -72,15 +79,27 @@ class Document{
                 throw err;
         }
     }
-    #convertData = ({doc, options}) =>{
-        const hasId = options._id === undefined || options._id?true:false;
+    #convertData = ({doc}) =>{
+        const hasId = this.#options._id === undefined || this.#options._id?true:false;
 
         let keys = Object.keys(this.schema);
         keys.forEach((key)=>{
-            let defaultValue = this.schema[key].default;
-            let value = doc[key]?doc[key]:defaultValue?defaultValue:key === '_id' && hasId?ObjectId():'';
-
-            this[key] = value;
+            if(this.isNew){
+                let defaultValue = this.schema[key].default,
+                    value = '';
+    
+                if(doc[key])
+                    value = doc[key];
+                else if(defaultValue)
+                    value = defaultValue;
+    
+                if(hasId && key === '_id')
+                    value = ObjectId();
+    
+                this[key] = value;
+            }else if(doc[key]){
+                this[key] = doc[key];
+            }
         });
     }
 }

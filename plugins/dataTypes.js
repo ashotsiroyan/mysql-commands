@@ -72,7 +72,7 @@ const dataTypes = {
     TINYINT: {
         min: 1,
         max: 255,
-        default: 4
+        default: null
     },
     BOOL: {
         min: null,
@@ -87,27 +87,27 @@ const dataTypes = {
     SMALLINT: {
         min: 1,
         max: 255,
-        default: 6
+        default: null
     },
     MEDIUMINT: {
         min: 1,
         max: 255,
-        default: 9
+        default: null
     },
     INT: {
         min: 1,
         max: 255,
-        default: 11
+        default: null
     },
     INTEGER: {
         min: 1,
         max: 255,
-        default: 11
+        default: null
     },
     BIGINT: {
         min: 1,
         max: 255,
-        default: 20
+        default: null
     },
     FLOAT: {
         min: 0,
