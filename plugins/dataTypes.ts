@@ -1,4 +1,6 @@
-const dataTypes = {
+export type dataTypes = 'CHAR' | 'VARCHAR' | 'BINARY' | 'VARBINARY' | 'TINYBLOB' | 'TINYTEXT' | 'TEXT' | 'BLOB' | 'MEDIUMTEXT' | 'LONGTEXT' | 'LONGBLOB' | 'ENUM' | 'SET' | 'BIT' | 'TINYINT' | 'BOOL' | 'BOOLEAN' | 'SMALLINT' | 'MEDIUMINT' | 'INT' | 'INTEGER' | 'BIGINT' | 'FLOAT' | 'DOUBLE' | 'DATE' | 'DATETIME' | 'TIMESTAMP' | 'TIME' | 'YEAR';
+
+export const dataTypesOptions:any = {
     CHAR: {
         min: 0,
         max: 255,
@@ -145,5 +147,3 @@ const dataTypes = {
         default: 4
     },
 }
-
-module.exports = dataTypes;

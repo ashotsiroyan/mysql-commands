@@ -1,38 +1,53 @@
-const {pool} = require('./mysql');
-const ObjectId = require('./plugins/ObjectId');
+import mysql from './mysql';
+import ObjectId from './plugins/ObjectId';
+
+import {SchemaDefinition, SchemaOptions} from './Schema';
+
+const pool = mysql.pool;
+
+interface IDocument{
+    preSave: ((params: object, fn:()=>void)=>void) | undefined;
+    checkDb: (fn:()=>void)=>void;
+    schema: SchemaDefinition;
+    table: string;
+    options: SchemaOptions;
+    isNew?: boolean;
+    doc: object;
+}
 
 class Document{
-    #preSave;
-    #checkDb;
-    #schema;
-    #table;
-    #options;
-    #isNew;
-    constructor({doc, schema, options, preSave, checkDb, table, isNew = false}){
-        this.#preSave = preSave;
-        this.#checkDb = checkDb;
-        this.#schema = schema;
-        this.#options = options;
-        this.#table = table;
-        this.#isNew = isNew;
+    #preSave: ((params: object, fn:()=>void)=>void) | undefined;
+    #checkDb: (fn:()=>void)=>void;
+    #schema: SchemaDefinition;
+    #table: string;
+    #options: SchemaOptions;
+    #isNew: boolean;
+    [name: string]: any;
+    constructor(params: IDocument){
+        this.#preSave = params.preSave;
+        this.#checkDb = params.checkDb;
+        this.#schema = params.schema;
+        this.#options = params.options;
+        this.#table = params.table;
+        this.#isNew = params.isNew || false;
 
-        this.#convertData({doc});
+        this.convertData({doc: params.doc});
+    }
+    get tableName(){
+        return this.#table;
     }
     get isNew(){
         return this.#isNew;
     }
-    get schema(){
-        return this.#schema;
-    }
-    save(callback){
+    save(callback?: (err: any, res?: any)=>void){
         try{
-            let query = this.isNew?"INSERT INTO " + this.#table:`UPDATE ${this.#table} SET`,
+            let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`,
                 cols = "",
                 values = "",
                 updateString = "";
 
             const insert = () =>{
-                let keys = Object.keys(this.schema);
+                let keys = Object.keys(this.#schema);
                 keys.forEach((key)=>{
                     let value = this[key];
 
@@ -52,7 +67,7 @@ class Document{
                 if(this.isNew)
                     query += ` (${cols.slice(0, -2)}) VALUES (${values.slice(0, -2)})`;
                 else
-                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this._id)}`;
+                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this['_id'])}`;
 
                 return this.#checkDb(()=>{
                     return pool.execute(query)
@@ -62,7 +77,7 @@ class Document{
                             else
                                 return true;
                         })
-                        .catch((err)=>{
+                        .catch((err:any)=>{
                             throw err;
                         });
                 });
@@ -79,15 +94,19 @@ class Document{
                 throw err;
         }
     }
-    #convertData = ({doc}) =>{
+    private convertData({doc}:any){
         const hasId = this.#options._id === undefined || this.#options._id?true:false;
 
-        let keys = Object.keys(this.schema);
+        let keys = Object.keys(this.#schema);
         keys.forEach((key)=>{
             if(this.isNew){
-                let defaultValue = this.schema[key].default,
-                    value = '';
-    
+                let defaultValue = undefined,
+                    value:any = '';
+
+                if(typeof this.#schema[key] !== 'string'){
+                    defaultValue = (this.#schema[key] as SchemaDefinition).default;
+                }
+
                 if(doc[key])
                     value = doc[key];
                 else if(defaultValue)
@@ -104,4 +123,4 @@ class Document{
     }
 }
 
-module.exports = Document;
+export default Document;

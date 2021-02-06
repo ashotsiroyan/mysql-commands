@@ -1,3 +1,5 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const actions = {
     $lt: '<',
     $gt: '>',
@@ -7,6 +9,5 @@ const actions = {
     $ne: '!=',
     $in: 'LIKE',
     $nin: 'NOT LIKE'
-}
-
-module.exports = actions;
+};
+exports.default = actions;

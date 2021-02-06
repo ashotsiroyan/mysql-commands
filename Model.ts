@@ -1,17 +1,20 @@
-const {pool} = require('./mysql');
-const actions = require('./plugins/actions');
-const ObjectId = require('./plugins/ObjectId');
-const Document = require('./Document');
+import mysql from './mysql';
+import actions from './plugins/actions';
+import ObjectId from './plugins/ObjectId';
+import Document from './Document';
+import {returnParams, SchemaDefinition, SchemaMethods, SchemaOptions} from './Schema';
 
-function getConditions(arg) {
+const pool = mysql.pool;
+
+function getConditions(arg:any) {
     let filterFileds = "";
 
-    const closer = ({params, prevField = null}) =>{
+    const closer = ({params, prevField = null}:any) =>{
         if(params){
             Object.keys(params).forEach((field, i)=>{
                 if(typeof params[field] === 'object'){
                     if(field === '$or' || field === '$and'){
-                        params[field].forEach((option, j)=>{
+                        params[field].forEach((option:any, j:number)=>{
                             filterFileds += "(";
                             closer({params: option});
                             if(filterFileds.slice(-5) === ' AND ')
@@ -24,7 +27,7 @@ function getConditions(arg) {
                             closer({params: params[field], prevField: field});
                         }
                         else if(field === '$in' || field === '$nin'){
-                            params[field].forEach((value)=>{
+                            params[field].forEach((value:any)=>{
                                 filterFileds += `${prevField} ${actions[field]} ${pool.escape(value)} AND `;
                             });
                         }
@@ -56,87 +59,113 @@ function getConditions(arg) {
     return filterFileds;
 }
 
-function getFileds(arg){
+function getFileds(arg: any){
     let showFileds = arg && arg.length > 0?"":"*";
 
     if(arg && arg.length > 0)
-        arg.forEach((field, i)=>{
+        arg.forEach((field: any, i: number)=>{
             showFileds += `${field}${i !== arg.length - 1?', ':''}`;
         });
 
     return showFileds;
 }
 
-class Model{
-    #mysqlStructure;
-    #methods;
-    #query = {
+
+interface DocumentParams{
+    schema: SchemaDefinition;
+    options: SchemaOptions;
+    preSave: ((params:any, next: ()=> void ) => void) | undefined;
+    table: string;
+}
+
+interface IModel{
+    new: (doc: any)=>Document;
+    find: (conditions?: object, fields?: any[])=>this | undefined;
+    findOne: (conditions?: object, fields?: any[])=>this | undefined;
+    findById: (id: string, fields?: any[])=>this | undefined;
+    insertOne: (params: object, callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+    insertMany: (params: any[], callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+    findAndUpdate: (conditions: object, update: any, callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+    findByIdAndUpdate: (id: string, update:any, callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+    findAndDelete: (conditions: any, callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+    findByIdAndDelete: (id: string, callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+    limit: (val: number | string)=>this | undefined;
+    skip: (val: number | string)=>this | undefined;
+    sort: (arg: any[])=>this | undefined;
+    countDocuments: (conditions:object, callback?: (err: any, res?: any)=>any)=>void;
+    exec: (callback?: (err: any, res?: any)=>any)=>Promise<any> | void;
+}
+
+class Model implements IModel{
+    private mysqlStructure: string;
+    private methods: SchemaMethods;
+    private query: any = {
         main: "",
         skip: "",
         sort: "",
         limit: "",
         err: null
     };
-    #documentParams = {}
-    constructor(table, SchemaParams){
-        this.#mysqlStructure = SchemaParams.sqlString;
-        this.#methods = SchemaParams.methods;
+    private documentParams: DocumentParams;
+    constructor(table: string, SchemaParams: returnParams){
+        this.mysqlStructure = SchemaParams.sqlString;
+        this.methods = SchemaParams.methods;
 
-        this.#documentParams = {
+        this.documentParams = {
             schema: SchemaParams.definition,
             options: SchemaParams.options,
-            preSave: this.#methods.save,
+            preSave: this.methods['save']?this.methods['save']:undefined,
             table: table
         }
     }
     get schema(){
-        return this.#documentParams.schema;
+        return this.documentParams.schema;
     }
     get tableName(){
-        return this.#documentParams.table;
+        return this.documentParams.table;
     }
-    new(doc = {}){
+    new(doc: any = {}){
         return new Document({
             doc,
-            ...this.#documentParams,
-            checkDb: this.#checkDb,
+            ...this.documentParams,
+            checkDb: this.checkDb.bind(this),
             isNew: true
         });
     }
-    find(conditions, fields){
+    find(conditions?: object, fields?: any[]){
         let query = "SELECT";
 
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`;
-        this.#query.main = query;
+        this.query.main = query;
 
         return this;
     }
-    findOne(conditions, fields){
+    findOne(conditions?: object, fields?: any[]){
         let query = "SELECT";
 
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`;
-        this.#query.main = query;
+        this.query.main = query;
 
         return this;
     }
-    findById(id, fields){
+    findById(id: string, fields?: any[]){
         if(id){
             let query = "SELECT";
     
             query += ` ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
-            this.#query.main = query;
+            this.query.main = query;
     
             return this;
         }else{
-            this.#query.err = "ID isn't filled."
+            this.query.err = "ID isn't filled."
         }
     }
-    insertOne(params = {}, callback){
+    insertOne(params:object = {}, callback?: (err: any, res?: any)=>any){
         try{
             const document = new Document({
                 doc: params,
-                ...this.#documentParams,
-                checkDb: this.#checkDb,
+                ...this.documentParams,
+                checkDb: this.checkDb.bind(this),
                 isNew: true
             });
 
@@ -148,20 +177,24 @@ class Model{
                 throw err;
         }
     }
-    insertMany(params = [], callback){
+    insertMany(params:any[] = [], callback?: (err: any, res?: any)=>any){
         try{
             let query = "INSERT INTO " + this.tableName,
                 values = "",
                 cols = "";
 
-            const hasId = this.#documentParams.options._id === undefined || this.#documentParams.options._id?true:false;
+            const hasId = this.documentParams.options._id === undefined || this.documentParams.options._id?true:false;
 
             const insert = () =>{       
                 let keys = Object.keys(this.schema);         
                 params.forEach((row, i)=>{
                     keys.forEach((key, j)=>{
-                        let defaultValue = this.schema[key].default,
-                            value = '';
+                        let defaultValue = undefined,
+                            value:any = '';
+
+                        if(typeof this.schema[key] !== 'string'){
+                            defaultValue = (this.schema[key] as SchemaDefinition).default;
+                        }
 
                         if(row[key])
                             value = row[key];
@@ -182,7 +215,7 @@ class Model{
     
                 query += ` (${cols}) VALUES ${values}`;
     
-                return this.#checkDb(()=>{
+                return this.checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
                             if(callback)
@@ -190,15 +223,15 @@ class Model{
                             else
                                 return true;
                         })
-                        .catch((err)=>{
+                        .catch((err: any)=>{
                             throw err;
                         });
                 });
             }
 
-            if(this.#methods.save){
+            if(this.methods.save !== undefined){
                 params.forEach((obj, i)=>{
-                    this.#methods.save(obj, ()=>{if(i === params.length - 1) insert();});
+                    if(this.methods.save !== undefined) this.methods.save(obj, ()=>{if(i === params.length - 1) insert();});
                 });
             }else
                 insert();
@@ -209,7 +242,7 @@ class Model{
                 throw err;
         }
     }
-    findAndUpdate(conditions, update = {}, callback){
+    findAndUpdate(conditions:object, update:any = {}, callback?: (err: any, res?: any)=>any){
         try{
             let filterFileds = getConditions(conditions);
 
@@ -222,7 +255,7 @@ class Model{
                         if(key !== '_id' && key !== 'id'){
                             let value = update[key];
 
-                            if(this.#documentParams.options.timestamps && key === '_updatedAt')
+                            if(this.documentParams.options.timestamps && key === '_updatedAt')
                                 value = new Date();
         
                             if(value){
@@ -235,7 +268,7 @@ class Model{
     
                     query += ` ${updateString.slice(0, -2)} ${filterFileds}`;
     
-                    return this.#checkDb(()=>{
+                    return this.checkDb(()=>{
                         return pool.execute(query)
                             .then(()=>{
                                 if(callback)
@@ -243,14 +276,14 @@ class Model{
                                 else
                                     return true;
                             })
-                            .catch((err)=>{
+                            .catch((err: any)=>{
                                 throw err;
                             });
                     });
                 }
 
-                if(this.#methods.update)
-                    this.#methods.update(update, insert);
+                if(this.methods.update)
+                    this.methods.update(update, insert);
                 else
                     insert();
             }else if(filterFileds.trim() === "")
@@ -264,7 +297,7 @@ class Model{
                 throw err;
         }
     }
-    findByIdAndUpdate(id, update = {}, callback){
+    findByIdAndUpdate(id: string, update:any = {}, callback?: (err: any, res?: any)=>any){
         try{
             if(id && Object.keys(update).length > 0){
                 let query = `UPDATE ${this.tableName} SET`,
@@ -275,7 +308,7 @@ class Model{
                         if(key !== '_id' && key !== 'id'){
                             let value = update[key];
 
-                            if(this.#documentParams.options.timestamps && key === '_updatedAt')
+                            if(this.documentParams.options.timestamps && key === '_updatedAt')
                                 value = new Date();
         
                             if(value){
@@ -288,7 +321,7 @@ class Model{
 
                     query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(id)}`;
     
-                    return this.#checkDb(()=>{
+                    return this.checkDb(()=>{
                         return pool.execute(query)
                             .then(()=>{
                                 if(callback)
@@ -296,14 +329,14 @@ class Model{
                                 else
                                     return true;
                             })
-                            .catch((err)=>{
+                            .catch((err: any)=>{
                                 throw err;
                             });
                     });
                 }
 
-                if(this.#methods.update)
-                    this.#methods.update(update, insert);
+                if(this.methods.update)
+                    this.methods.update(update, insert);
                 else
                     insert();
             }else if(!id)
@@ -317,14 +350,14 @@ class Model{
                 throw err;
         }
     }
-    findAndDelete(conditions, callback){
+    findAndDelete(conditions: any, callback?: (err: any, res?: any)=>any){
         try{
             let filterFileds = getConditions(conditions);
 
             if(filterFileds.trim() !== ""){
                 let query = `DELETE FROM ${this.tableName} ${filterFileds}`;
 
-                return this.#checkDb(()=>{
+                return this.checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
                             if(callback)
@@ -332,7 +365,7 @@ class Model{
                             else
                                 return true;
                         })
-                        .catch((err)=>{
+                        .catch((err: any)=>{
                             throw err;
                         });
                 });
@@ -345,12 +378,12 @@ class Model{
                 throw err;
         }
     }
-    findByIdAndDelete(id, callback){
+    findByIdAndDelete(id: string, callback?: (err: any, res?: any)=>any){
         try{
             if(id){
                 let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(id)}`;
                 
-                return this.#checkDb(()=>{
+                return this.checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
                             if(callback)
@@ -358,7 +391,7 @@ class Model{
                             else
                                 return true;
                         })
-                        .catch((err)=>{
+                        .catch((err: any)=>{
                             throw err;
                         });
                 });
@@ -372,48 +405,48 @@ class Model{
                 throw err;
         }
     }
-    limit(val){
-        if(this.#query.main !== ""){
+    limit(val: number | string){
+        if(this.query.main !== ""){
             if(val){
-                this.#query.limit = " LIMIT " + val;
+                this.query.limit = " LIMIT " + val;
             }
         }else
-            this.#query.err = "Order Error: .find().limit()";
+            this.query.err = "Order Error: .find().limit()";
 
         return this;
     }
-    skip(val){
-        if(this.#query.main !== ""){
+    skip(val: number | string){
+        if(this.query.main !== ""){
             if(val){
-                this.#query.skip = " OFFSET " + val;
+                this.query.skip = " OFFSET " + val;
             }
         }else
-            this.#query.err = "Order Error: .find().skip()";
+            this.query.err = "Order Error: .find().skip()";
         
         return this;
     }
-    sort(arg){
-        if(this.#query.main !== ""){
+    sort(arg: any){
+        if(this.query.main !== ""){
             if(Object.keys(arg).length > 0){
                 let query = " ORDER BY ";
 
-                Object.keys(arg).forEach((key, i)=>{
+                Object.keys(arg).forEach((key: string | number, i)=>{
                     query += `${key} ${arg[key] === -1?'DESC':'ASC'}${i !== Object.keys(arg).length - 1?', ':''}`;
                 });
 
-                this.#query.sort = query;
+                this.query.sort = query;
             }
         }else
-            this.#query.err = "Order Error: .find().sort()";
+            this.query.err = "Order Error: .find().sort()";
         
         return this;
     }
-    countDocuments(conditions = {}, callback){
+    countDocuments(conditions:object = {}, callback?: (err: any, res?: any)=>any){
         try{
             let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
         
-            return this.#checkDb(()=>{
-                return pool.execute(query).then(([res])=>{
+            return this.checkDb(()=>{
+                return pool.execute(query).then(([res]: any[])=>{
                     let count = res[0]['COUNT(*)'];
 
                     if(callback)
@@ -429,20 +462,20 @@ class Model{
                 throw err;
         }
     }
-    exec(callback){
+    exec(callback?: (err: any, res?: any)=>any){
         try{
-            if(this.#query.err)
-                throw this.#query.err;
+            if(this.query.err)
+                throw this.query.err;
 
-            let {main, limit, sort, skip} = this.#query;
+            let {main, limit, sort, skip} = this.query;
 
             if(main !== ""){
                 let query = main + sort + limit + (limit !== ''?skip:'');
 
-                return this.#checkDb(()=>{
+                return this.checkDb(()=>{
                     return pool.execute(query)
-                        .then(([rows])=>{
-                            this.#query.main = {
+                        .then(([rows]: any[])=>{
+                            this.query = {
                                 main: "",
                                 skip: "",
                                 sort: "",
@@ -450,11 +483,11 @@ class Model{
                                 err: null
                             };
 
-                            let res = rows.map((row)=>{
+                            let res = rows.map((row: any[])=>{
                                 return new Document({
                                     doc: row,
-                                    ...this.#documentParams,
-                                    checkDb: this.#checkDb
+                                    ...this.documentParams,
+                                    checkDb: this.checkDb.bind(this)
                                 });
                             });
     
@@ -463,7 +496,7 @@ class Model{
                             else
                                 return res;
                         })
-                        .catch((err)=>{
+                        .catch((err: any)=>{
                             throw err;
                         });
                 });
@@ -471,7 +504,7 @@ class Model{
                 throw "Order Error: .find().exec()";
             }
         }catch(err){
-            this.#query.main = {
+            this.query = {
                 main: "",
                 skip: "",
                 sort: "",
@@ -485,15 +518,15 @@ class Model{
                 throw err;
         }
     }
-    #checkDb = (next) => {
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.#mysqlStructure})`)
+    private checkDb(next: ()=>void){
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.mysqlStructure})`)
             .then(()=>{
                 return next();
             })
-            .catch((err)=>{
+            .catch((err: any)=>{
                 throw err;
             });
     }
 }
 
-module.exports = Model;
+export default Model;
