@@ -1,11 +1,12 @@
 import { dataTypes } from './plugins/dataTypes';
+import Document from './Document';
 export interface returnParams {
     sqlString: string;
     definition: SchemaDefinition;
     methods: SchemaMethods;
     options: SchemaOptions;
 }
-export declare type SchemaDefinitionParams = {
+declare type SchemaDefinitionParams = {
     type?: dataTypes;
     default?: any;
     size?: number;
@@ -15,6 +16,9 @@ export declare type SchemaDefinitionParams = {
     unsigned?: boolean;
     unique?: boolean;
     [other: string]: any;
+};
+declare type SchemaIndex = {
+    [field: string]: string;
 };
 export interface SchemaOptions {
     _id?: boolean;
@@ -39,8 +43,8 @@ declare class Schema {
         methods: SchemaMethods;
         options: SchemaOptions;
     };
-    pre(method: 'save' | 'update', callBack: (params: any, next: () => void) => void): void;
-    index(fields?: any): void;
+    pre(method: 'save' | 'update', callBack: (params: Document, next: () => void) => void): void;
+    index(fields: SchemaIndex): void;
     private convertToString;
 }
 export default Schema;

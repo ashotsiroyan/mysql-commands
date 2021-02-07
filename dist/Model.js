@@ -87,26 +87,32 @@ class Model {
     get tableName() {
         return this.documentParams.table;
     }
-    new(doc = {}) {
+    new(doc) {
         return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
     }
-    find(conditions, fields) {
+    find(conditions, fields, callback) {
         let query = "SELECT";
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`;
         this.query.main = query;
+        if (callback)
+            return this.exec(callback);
         return this;
     }
-    findOne(conditions, fields) {
+    findOne(conditions, fields, callback) {
         let query = "SELECT";
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`;
         this.query.main = query;
+        if (callback)
+            return this.exec(callback);
         return this;
     }
-    findById(id, fields) {
+    findById(id, fields, callback) {
         if (id) {
             let query = "SELECT";
             query += ` ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
             this.query.main = query;
+            if (callback)
+                return this.exec(callback);
             return this;
         }
         else {
@@ -116,7 +122,9 @@ class Model {
     insertOne(params = {}, callback) {
         try {
             const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
-            return document.save(callback);
+            if (callback)
+                return document.save(callback);
+            return document.save();
         }
         catch (err) {
             if (callback)
@@ -364,7 +372,7 @@ class Model {
             this.query.err = "Order Error: .find().sort()";
         return this;
     }
-    countDocuments(conditions = {}, callback) {
+    countDocuments(conditions, callback) {
         try {
             let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
             return this.checkDb(() => {

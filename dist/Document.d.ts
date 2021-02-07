@@ -1,5 +1,5 @@
 import { SchemaDefinition, SchemaOptions } from './Schema';
-interface IDocument {
+interface DocumentParams {
     preSave: ((params: object, fn: () => void) => void) | undefined;
     checkDb: (fn: () => void) => void;
     schema: SchemaDefinition;
@@ -11,10 +11,11 @@ interface IDocument {
 declare class Document {
     #private;
     [name: string]: any;
-    constructor(params: IDocument);
+    constructor(params: DocumentParams);
     get tableName(): string;
     get isNew(): boolean;
-    save(callback?: (err: any, res?: any) => void): void;
+    save(): any | Promise<any>;
+    save(callback: (err: any, res?: any) => void): void;
     private convertData;
 }
 export default Document;

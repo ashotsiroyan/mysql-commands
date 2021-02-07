@@ -20,7 +20,7 @@ class Schema {
     pre(method, callBack) {
         this.methods[method] = callBack;
     }
-    index(fields = {}) {
+    index(fields) {
         let indexes = {}, sqlString = "";
         const exists = (name) => {
             let is = false;

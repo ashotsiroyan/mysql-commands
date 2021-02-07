@@ -5,7 +5,7 @@ import {SchemaDefinition, SchemaOptions} from './Schema';
 
 const pool = mysql.pool;
 
-interface IDocument{
+interface DocumentParams{
     preSave: ((params: object, fn:()=>void)=>void) | undefined;
     checkDb: (fn:()=>void)=>void;
     schema: SchemaDefinition;
@@ -23,7 +23,7 @@ class Document{
     #options: SchemaOptions;
     #isNew: boolean;
     [name: string]: any;
-    constructor(params: IDocument){
+    constructor(params: DocumentParams){
         this.#preSave = params.preSave;
         this.#checkDb = params.checkDb;
         this.#schema = params.schema;
@@ -39,7 +39,10 @@ class Document{
     get isNew(){
         return this.#isNew;
     }
-    save(callback?: (err: any, res?: any)=>void){
+
+    save(): any | Promise<any>;
+    save(callback: (err: any, res?: any)=> void): void
+    save(callback?: (err: any, res?: any)=> void){
         try{
             let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`,
                 cols = "",
@@ -80,7 +83,7 @@ class Document{
                         .catch((err:any)=>{
                             throw err;
                         });
-                });
+                })
             }
 
             if(this.#preSave)
@@ -94,7 +97,7 @@ class Document{
                 throw err;
         }
     }
-    private convertData({doc}:any){
+    private convertData({doc}: any){
         const hasId = this.#options._id === undefined || this.#options._id?true:false;
 
         let keys = Object.keys(this.#schema);

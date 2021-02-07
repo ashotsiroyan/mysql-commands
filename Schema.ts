@@ -1,4 +1,5 @@
 import { dataTypes, dataTypesOptions } from './plugins/dataTypes';
+import Document from './Document';
 
 export interface returnParams{
     sqlString: string;
@@ -7,7 +8,7 @@ export interface returnParams{
     options: SchemaOptions;
 }
 
-export type SchemaDefinitionParams = {
+type SchemaDefinitionParams = {
     type?: dataTypes;
     default?: any;
     size?: number;
@@ -17,6 +18,10 @@ export type SchemaDefinitionParams = {
     unsigned?: boolean;
     unique?: boolean;
     [other: string]: any;
+}
+
+type SchemaIndex = {
+    [field: string]: string
 }
 
 export interface SchemaOptions {
@@ -53,10 +58,10 @@ class Schema{
             options: this.options
         }
     }
-    pre(method: 'save' | 'update', callBack: (params:any, next: ()=> void ) => void){
+    pre(method: 'save' | 'update', callBack: (params: Document, next: ()=> void ) => void){
         this.methods[method] = callBack;
     }
-    index(fields:any = {}){
+    index(fields: SchemaIndex){
         let indexes:any = {},
             sqlString:string = "";
         

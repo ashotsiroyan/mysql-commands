@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 
-type ISingleton = {
+interface ISingleton {
     pool: {
         execute: (sql: string, values?: any) => any;
         query: (sql: string, values?: any) => any;
