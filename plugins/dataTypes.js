@@ -1,4 +1,7 @@
-const dataTypes = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.dataTypesOptions = void 0;
+exports.dataTypesOptions = {
     CHAR: {
         min: 0,
         max: 255,
@@ -144,6 +147,4 @@ const dataTypes = {
         max: 4,
         default: 4
     },
-}
-
-module.exports = dataTypes;
+};
