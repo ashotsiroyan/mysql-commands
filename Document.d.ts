@@ -14,8 +14,8 @@ declare class Document {
     constructor(params: DocumentParams);
     get tableName(): string;
     get isNew(): boolean;
-    save(): any | Promise<any>;
-    save(callback: (err: any, res?: any) => void): void;
+    save(): Document | Promise<Document>;
+    save(callback: (err: any, res?: Document) => void): void;
     private convertData;
 }
 export default Document;
