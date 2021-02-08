@@ -44,9 +44,9 @@ class Document {
     }
     save(callback) {
         try {
-            let query = this.isNew ? "INSERT INTO " + this.tableName : `UPDATE ${this.tableName} SET`, cols = "", values = "", updateString = "";
+            let query = this.isNew ? "INSERT INTO " + this.tableName : `UPDATE ${this.tableName} SET`;
             const insert = () => {
-                let keys = Object.keys(__classPrivateFieldGet(this, _schema));
+                let keys = Object.keys(__classPrivateFieldGet(this, _schema)), cols = "", values = "", updateString = "";
                 keys.forEach((key) => {
                     let value = this[key];
                     if (!this.isNew && __classPrivateFieldGet(this, _options).timestamps && key === '_updatedAt')
@@ -64,27 +64,28 @@ class Document {
                     query += ` (${cols.slice(0, -2)}) VALUES (${values.slice(0, -2)})`;
                 else
                     query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this['_id'])}`;
-                return __classPrivateFieldGet(this, _checkDb).call(this, () => {
-                    return pool.execute(query)
-                        .then(() => {
-                        if (callback)
-                            callback(null);
-                        else
-                            return true;
-                    })
-                        .catch((err) => {
-                        throw err;
-                    });
-                });
             };
             if (__classPrivateFieldGet(this, _preSave))
                 __classPrivateFieldGet(this, _preSave).call(this, this, insert);
             else
                 insert();
+            return __classPrivateFieldGet(this, _checkDb).call(this, () => {
+                return pool.execute(query)
+                    .then(() => {
+                    if (callback)
+                        callback(null, this);
+                    else
+                        return this;
+                })
+                    .catch((err) => {
+                    throw err;
+                });
+            });
         }
         catch (err) {
-            if (callback)
+            if (callback) {
                 callback(err);
+            }
             else
                 throw err;
         }

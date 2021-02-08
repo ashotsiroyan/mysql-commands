@@ -1,6 +1,5 @@
 import mysql from './mysql';
 import actions from './plugins/actions';
-import ObjectId from './plugins/ObjectId';
 import Document from './Document';
 import {returnParams, SchemaDefinition, SchemaMethods, SchemaOptions} from './Schema';
 
@@ -90,23 +89,23 @@ interface IModel{
     findById(id: string, fields?: any[]): this;
     findById(id: string, fields: any[], callback: (err: any, res?: Document[])=>void): void;
 
-    insertOne(params: object): boolean | undefined | Promise<boolean> | Promise<undefined>;
-    insertOne(params: object, callback: (err: any, res?: any)=>void): void;
+    insertOne(params: object): Document | Promise<Document>;
+    insertOne(params: object, callback: (err: any, res?: Document)=>void): void;
 
-    insertMany(params: any[]): boolean | undefined | Promise<boolean> | Promise<undefined>;
-    insertMany(params: any[], callback: (err: any, res?: any)=>void): void;
+    insertMany(params: any[]): Document[] | Promise<Document[]>;
+    insertMany(params: any[], callback: (err: any, res?: Document[])=>void): void;
 
-    findAndUpdate(conditions: object, update: any): boolean | undefined | Promise<boolean> | Promise<undefined>;
-    findAndUpdate(conditions: object, update: any, callback: (err: any, res?: any)=>void): void;
+    findAndUpdate(conditions: object, update: any): Document | Promise<Document>;
+    findAndUpdate(conditions: object, update: any, callback: (err: any, res?: Document)=>void): void;
 
-    findByIdAndUpdate(id: string, update:any): boolean | undefined | Promise<boolean> | Promise<undefined>;
-    findByIdAndUpdate(id: string, update:any, callback: (err: any, res?: any)=>void): void;
+    findByIdAndUpdate(id: string, update:any): Document | Promise<Document>;
+    findByIdAndUpdate(id: string, update:any, callback: (err: any, res?: Document)=>void): void;
 
-    findAndDelete(conditions: any): boolean | undefined | Promise<boolean> | Promise<undefined>;
-    findAndDelete(conditions: any, callback: (err: any, res?: any)=>void): void;
+    findAndDelete(conditions: any): Document | Promise<Document>;
+    findAndDelete(conditions: any, callback: (err: any, res?: Document)=>void): void;
 
-    findByIdAndDelete(id: string): boolean | undefined | Promise<boolean> | Promise<undefined>;
-    findByIdAndDelete(id: string, callback: (err: any, res?: any)=>void): void;
+    findByIdAndDelete(id: string): Document | Promise<Document>;
+    findByIdAndDelete(id: string, callback: (err: any, res?: Document)=>void): void;
 
     limit(val: number | string): this | undefined;
     skip(val: number | string): this | undefined;
@@ -138,7 +137,7 @@ class Model implements IModel{
         this.documentParams = {
             schema: SchemaParams.definition,
             options: SchemaParams.options,
-            preSave: this.methods['save']?this.methods['save']:undefined,
+            preSave: this.methods['save'],
             table: table
         }
     }
@@ -203,9 +202,9 @@ class Model implements IModel{
         }
     }
 
-    insertOne(params:object): boolean | undefined | Promise<boolean> | Promise<undefined>
-    insertOne(params:object, callback: (err: any, res?: any)=>any): void
-    insertOne(params:object = {}, callback?: (err: any, res?: any)=>any){
+    insertOne(params:object): Document | Promise<Document>
+    insertOne(params:object, callback: (err: any, res?: Document)=>void): void
+    insertOne(params:object = {}, callback?: (err: any, res?: Document)=>void){
         try{
             const document = new Document({
                 doc: params,
@@ -215,9 +214,9 @@ class Model implements IModel{
             });
 
             if(callback)
-                return document.save(callback);
-            
-            return document.save();
+                document.save(callback);
+            else
+                return document.save();
         }catch(err){
             if(callback)
                 callback(err);
@@ -226,66 +225,60 @@ class Model implements IModel{
         }
     }
 
-    insertMany(params:any[]): any | Promise<any>
-    insertMany(params:any[], callback: (err: any, res?: any)=>void): void
-    insertMany(params:any[] = [], callback?: (err: any, res?: any)=>void){
+    insertMany(params:any[]): Document[] | Promise<Document[]>
+    insertMany(params:any[], callback: (err: any, res?: Document[])=>void): void
+    insertMany(params:any[] = [], callback?: (err: any, res?: Document[])=>void){
         try{
             let query = "INSERT INTO " + this.tableName,
-                values = "",
-                cols = "";
-
-            const hasId = this.documentParams.options._id === undefined || this.documentParams.options._id?true:false;
+                docs: Document[] = params.map((doc)=>{
+                    return new Document({
+                        doc,
+                        ...this.documentParams,
+                        checkDb: this.checkDb.bind(this),
+                        isNew: true
+                    });
+                });
 
             const insert = () =>{       
-                let keys = Object.keys(this.schema);         
-                params.forEach((row, i)=>{
+                let keys = Object.keys(this.schema),
+                    values = "",
+                    cols = "";
+
+                docs.forEach((row, i)=>{
                     keys.forEach((key, j)=>{
-                        let defaultValue = undefined,
-                            value:any = '';
-
-                        if(typeof this.schema[key] !== 'string'){
-                            defaultValue = (this.schema[key] as SchemaDefinition).default;
-                        }
-
-                        if(row[key])
-                            value = row[key];
-                        else if(defaultValue)
-                            value = defaultValue;
-
-                        if(hasId && key === '_id')
-                            value = ObjectId();
-
-                        value = pool.escape(value);
+                        let value = pool.escape(row[key]);
         
                         if(i === 0)
-                            cols += `${key}${j !== keys.length - 1?', ':''}`;
+                            cols += `${key}, `;
 
                         values += `${j === 0?'(':''}${value}${j !== keys.length - 1?', ':i === params.length - 1?')':'), '}`;
                     });
                 });
     
-                query += ` (${cols}) VALUES ${values}`;
-    
-                return this.checkDb(()=>{
-                    return pool.execute(query)
-                        .then(()=>{
-                            if(callback)
-                                callback(null);
-                            else
-                                return true;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+                query += ` (${cols.slice(0, -2)}) VALUES ${values}`;
             }
 
             if(this.methods.save !== undefined){
-                params.forEach((obj, i)=>{
-                    if(this.methods.save !== undefined) this.methods.save(obj, ()=>{if(i === params.length - 1) insert();});
+                docs.forEach((doc, i)=>{
+                    if(this.methods.save !== undefined) {
+                        this.methods.save(doc, ()=>{if(i === docs.length - 1) insert();});
+                    }
                 });
             }else
                 insert();
+
+            return this.checkDb(()=>{
+                return pool.execute(query)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, docs);
+                        else
+                            return docs;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
+            });                
         }catch(err){
             if(callback)
                 callback(err);
@@ -294,17 +287,18 @@ class Model implements IModel{
         }
     }
 
-    findAndUpdate(conditions:object, update:any): any | Promise<any>
-    findAndUpdate(conditions:object, update:any, callback: (err: any, res?: any)=>void): void
-    findAndUpdate(conditions:object, update:any = {}, callback?: (err: any, res?: any)=>void){
+    findAndUpdate(conditions:object, update:any): Document | Promise<Document>
+    findAndUpdate(conditions:object, update:any, callback: (err: any, res?: Document)=>void): void
+    findAndUpdate(conditions:object, update:any = {}, callback?: (err: any, res?: Document)=>void){
         try{
             let filterFileds = getConditions(conditions);
 
             if(filterFileds.trim() !== "" && Object.keys(update).length > 0){
-                let query = `UPDATE ${this.tableName} SET`,
-                    updateString = "";
+                let query = `UPDATE ${this.tableName} SET`;
                     
                 const insert = () =>{
+                    let updateString = "";
+
                     Object.keys(this.schema).forEach((key)=>{
                         if(key !== '_id' && key !== 'id'){
                             let value = update[key];
@@ -321,25 +315,25 @@ class Model implements IModel{
                     });
     
                     query += ` ${updateString.slice(0, -2)} ${filterFileds}`;
-    
-                    return this.checkDb(()=>{
-                        return pool.execute(query)
-                            .then(()=>{
-                                if(callback)
-                                    callback(null);
-                                else
-                                    return true;
-                            })
-                            .catch((err: any)=>{
-                                throw err;
-                            });
-                    });
                 }
 
                 if(this.methods.update)
                     this.methods.update(update, insert);
                 else
                     insert();
+    
+                return this.checkDb(()=>{
+                    return pool.execute(query)
+                        .then(()=>{
+                            if(callback)
+                                callback(null);
+                            else
+                                return true;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
             }else if(filterFileds.trim() === "")
                 throw "Filter fileds aren't filled.";
             else if(Object.keys(update).length === 0)
@@ -352,15 +346,16 @@ class Model implements IModel{
         }
     }
 
-    findByIdAndUpdate(id: string, update:any): any | Promise<any>
-    findByIdAndUpdate(id: string, update:any, callback: (err: any, res?: any)=>void): void
-    findByIdAndUpdate(id: string, update:any = {}, callback?: (err: any, res?: any)=>void){
+    findByIdAndUpdate(id: string, update:any): Document | Promise<Document>
+    findByIdAndUpdate(id: string, update:any, callback: (err: any, res?: Document)=>void): void
+    findByIdAndUpdate(id: string, update:any = {}, callback?: (err: any, res?: Document)=>void){
         try{
             if(id && Object.keys(update).length > 0){
-                let query = `UPDATE ${this.tableName} SET`,
-                    updateString = "";
+                let query = `UPDATE ${this.tableName} SET`;
                     
                 const insert = () =>{
+                    let updateString = "";
+
                     Object.keys(this.schema).forEach((key)=>{
                         if(key !== '_id' && key !== 'id'){
                             let value = update[key];
@@ -377,25 +372,25 @@ class Model implements IModel{
                     });
 
                     query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(id)}`;
-    
-                    return this.checkDb(()=>{
-                        return pool.execute(query)
-                            .then(()=>{
-                                if(callback)
-                                    callback(null);
-                                else
-                                    return true;
-                            })
-                            .catch((err: any)=>{
-                                throw err;
-                            });
-                    });
                 }
 
                 if(this.methods.update)
                     this.methods.update(update, insert);
                 else
                     insert();
+
+                return this.checkDb(()=>{
+                    return pool.execute(query)
+                        .then(()=>{
+                            if(callback)
+                                callback(null);
+                            else
+                                return true;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
             }else if(!id)
                 throw "ID isn't filled."
             else if(Object.keys(update).length === 0)
@@ -408,9 +403,9 @@ class Model implements IModel{
         }
     }
 
-    findAndDelete(conditions: any): boolean | undefined | Promise<boolean> | Promise<undefined>
-    findAndDelete(conditions: any, callback: (err: any, res?: any)=>void): void
-    findAndDelete(conditions: any, callback?: (err: any, res?: any)=>void){
+    findAndDelete(conditions: any): Document | Promise<Document>
+    findAndDelete(conditions: any, callback: (err: any, res?: Document)=>void): void
+    findAndDelete(conditions: any, callback?: (err: any, res?: Document)=>void){
         try{
             let filterFileds = getConditions(conditions);
 
@@ -439,9 +434,9 @@ class Model implements IModel{
         }
     }
 
-    findByIdAndDelete(id: string): boolean | undefined | Promise<boolean> | Promise<undefined>
-    findByIdAndDelete(id: string, callback: (err: any, res?: any)=>void): void
-    findByIdAndDelete(id: string, callback?: (err: any, res?: any)=>void){
+    findByIdAndDelete(id: string): Document | Promise<Document>
+    findByIdAndDelete(id: string, callback: (err: any, res?: Document)=>void): void
+    findByIdAndDelete(id: string, callback?: (err: any, res?: Document)=>void){
         try{
             if(id){
                 let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(id)}`;

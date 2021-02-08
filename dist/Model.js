@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mysql_1 = __importDefault(require("./mysql"));
 const actions_1 = __importDefault(require("./plugins/actions"));
-const ObjectId_1 = __importDefault(require("./plugins/ObjectId"));
 const Document_1 = __importDefault(require("./Document"));
 const pool = mysql_1.default.pool;
 function getConditions(arg) {
@@ -77,7 +76,7 @@ class Model {
         this.documentParams = {
             schema: SchemaParams.definition,
             options: SchemaParams.options,
-            preSave: this.methods['save'] ? this.methods['save'] : undefined,
+            preSave: this.methods['save'],
             table: table
         };
     }
@@ -123,8 +122,9 @@ class Model {
         try {
             const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
             if (callback)
-                return document.save(callback);
-            return document.save();
+                document.save(callback);
+            else
+                return document.save();
         }
         catch (err) {
             if (callback)
@@ -135,51 +135,43 @@ class Model {
     }
     insertMany(params = [], callback) {
         try {
-            let query = "INSERT INTO " + this.tableName, values = "", cols = "";
-            const hasId = this.documentParams.options._id === undefined || this.documentParams.options._id ? true : false;
+            let query = "INSERT INTO " + this.tableName, docs = params.map((doc) => {
+                return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
+            });
             const insert = () => {
-                let keys = Object.keys(this.schema);
-                params.forEach((row, i) => {
+                let keys = Object.keys(this.schema), values = "", cols = "";
+                docs.forEach((row, i) => {
                     keys.forEach((key, j) => {
-                        let defaultValue = undefined, value = '';
-                        if (typeof this.schema[key] !== 'string') {
-                            defaultValue = this.schema[key].default;
-                        }
-                        if (row[key])
-                            value = row[key];
-                        else if (defaultValue)
-                            value = defaultValue;
-                        if (hasId && key === '_id')
-                            value = ObjectId_1.default();
-                        value = pool.escape(value);
+                        let value = pool.escape(row[key]);
                         if (i === 0)
-                            cols += `${key}${j !== keys.length - 1 ? ', ' : ''}`;
+                            cols += `${key}, `;
                         values += `${j === 0 ? '(' : ''}${value}${j !== keys.length - 1 ? ', ' : i === params.length - 1 ? ')' : '), '}`;
                     });
                 });
-                query += ` (${cols}) VALUES ${values}`;
-                return this.checkDb(() => {
-                    return pool.execute(query)
-                        .then(() => {
-                        if (callback)
-                            callback(null);
-                        else
-                            return true;
-                    })
-                        .catch((err) => {
-                        throw err;
-                    });
-                });
+                query += ` (${cols.slice(0, -2)}) VALUES ${values}`;
             };
             if (this.methods.save !== undefined) {
-                params.forEach((obj, i) => {
-                    if (this.methods.save !== undefined)
-                        this.methods.save(obj, () => { if (i === params.length - 1)
+                docs.forEach((doc, i) => {
+                    if (this.methods.save !== undefined) {
+                        this.methods.save(doc, () => { if (i === docs.length - 1)
                             insert(); });
+                    }
                 });
             }
             else
                 insert();
+            return this.checkDb(() => {
+                return pool.execute(query)
+                    .then(() => {
+                    if (callback)
+                        callback(null, docs);
+                    else
+                        return docs;
+                })
+                    .catch((err) => {
+                    throw err;
+                });
+            });
         }
         catch (err) {
             if (callback)
@@ -192,8 +184,9 @@ class Model {
         try {
             let filterFileds = getConditions(conditions);
             if (filterFileds.trim() !== "" && Object.keys(update).length > 0) {
-                let query = `UPDATE ${this.tableName} SET`, updateString = "";
+                let query = `UPDATE ${this.tableName} SET`;
                 const insert = () => {
+                    let updateString = "";
                     Object.keys(this.schema).forEach((key) => {
                         if (key !== '_id' && key !== 'id') {
                             let value = update[key];
@@ -206,23 +199,23 @@ class Model {
                         }
                     });
                     query += ` ${updateString.slice(0, -2)} ${filterFileds}`;
-                    return this.checkDb(() => {
-                        return pool.execute(query)
-                            .then(() => {
-                            if (callback)
-                                callback(null);
-                            else
-                                return true;
-                        })
-                            .catch((err) => {
-                            throw err;
-                        });
-                    });
                 };
                 if (this.methods.update)
                     this.methods.update(update, insert);
                 else
                     insert();
+                return this.checkDb(() => {
+                    return pool.execute(query)
+                        .then(() => {
+                        if (callback)
+                            callback(null);
+                        else
+                            return true;
+                    })
+                        .catch((err) => {
+                        throw err;
+                    });
+                });
             }
             else if (filterFileds.trim() === "")
                 throw "Filter fileds aren't filled.";
@@ -239,8 +232,9 @@ class Model {
     findByIdAndUpdate(id, update = {}, callback) {
         try {
             if (id && Object.keys(update).length > 0) {
-                let query = `UPDATE ${this.tableName} SET`, updateString = "";
+                let query = `UPDATE ${this.tableName} SET`;
                 const insert = () => {
+                    let updateString = "";
                     Object.keys(this.schema).forEach((key) => {
                         if (key !== '_id' && key !== 'id') {
                             let value = update[key];
@@ -253,23 +247,23 @@ class Model {
                         }
                     });
                     query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(id)}`;
-                    return this.checkDb(() => {
-                        return pool.execute(query)
-                            .then(() => {
-                            if (callback)
-                                callback(null);
-                            else
-                                return true;
-                        })
-                            .catch((err) => {
-                            throw err;
-                        });
-                    });
                 };
                 if (this.methods.update)
                     this.methods.update(update, insert);
                 else
                     insert();
+                return this.checkDb(() => {
+                    return pool.execute(query)
+                        .then(() => {
+                        if (callback)
+                            callback(null);
+                        else
+                            return true;
+                    })
+                        .catch((err) => {
+                        throw err;
+                    });
+                });
             }
             else if (!id)
                 throw "ID isn't filled.";

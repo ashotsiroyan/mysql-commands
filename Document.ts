@@ -17,7 +17,7 @@ interface DocumentParams{
 
 class Document{
     #preSave: ((params: object, fn:()=>void)=>void) | undefined;
-    #checkDb: (fn:()=>void)=>void;
+    #checkDb: (fn:()=>void)=>any;
     #schema: SchemaDefinition;
     #table: string;
     #options: SchemaOptions;
@@ -40,17 +40,18 @@ class Document{
         return this.#isNew;
     }
 
-    save(): any | Promise<any>;
-    save(callback: (err: any, res?: any)=> void): void
-    save(callback?: (err: any, res?: any)=> void){
+    save(): Document | Promise<Document>;
+    save(callback: (err: any, res?: Document)=> void): void;
+    save(callback?: (err: any, res?: Document)=> void){
         try{
-            let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`,
-                cols = "",
-                values = "",
-                updateString = "";
+            let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`;
 
             const insert = () =>{
-                let keys = Object.keys(this.#schema);
+                let keys = Object.keys(this.#schema),
+                    cols = "",
+                    values = "",
+                    updateString = "";
+
                 keys.forEach((key)=>{
                     let value = this[key];
 
@@ -71,29 +72,30 @@ class Document{
                     query += ` (${cols.slice(0, -2)}) VALUES (${values.slice(0, -2)})`;
                 else
                     query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this['_id'])}`;
-
-                return this.#checkDb(()=>{
-                    return pool.execute(query)
-                        .then(()=>{
-                            if(callback)
-                                callback(null);
-                            else
-                                return true;
-                        })
-                        .catch((err:any)=>{
-                            throw err;
-                        });
-                })
             }
+
 
             if(this.#preSave)
                 this.#preSave(this, insert);
             else
-                insert();            
+                insert();
+
+            return this.#checkDb(()=>{
+                return pool.execute(query)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, this as Document);
+                        else
+                            return this as Document;
+                    })
+                    .catch((err:any)=>{
+                        throw err;
+                    });
+            })
         }catch(err){
-            if(callback)
+            if(callback){
                 callback(err);
-            else
+            }else
                 throw err;
         }
     }
