@@ -82,7 +82,7 @@ Important! If you opened a separate connection using mongoose.createConnection()
 
 ```
 // retrieve my model
-const BlogPost = mongoose.model('BlogPost');
+const BlogPost = mysql.model('BlogPost');
 
 // create a blog post
 const post = BlogPost.new();
