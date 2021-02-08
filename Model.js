@@ -77,6 +77,7 @@ class Model {
             schema: SchemaParams.definition,
             options: SchemaParams.options,
             preSave: this.methods['save'],
+            checkDb: this.checkDb.bind(this),
             table: table
         };
     }
@@ -87,7 +88,7 @@ class Model {
         return this.documentParams.table;
     }
     new(doc) {
-        return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
+        return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { isNew: true }));
     }
     find(conditions, fields, callback) {
         let query = "SELECT";
@@ -120,7 +121,7 @@ class Model {
     }
     insertOne(params = {}, callback) {
         try {
-            const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
+            const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.documentParams), { isNew: true }));
             if (callback)
                 document.save(callback);
             else
@@ -136,7 +137,7 @@ class Model {
     insertMany(params = [], callback) {
         try {
             let query = "INSERT INTO " + this.tableName, docs = params.map((doc) => {
-                return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { checkDb: this.checkDb.bind(this), isNew: true }));
+                return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { isNew: true }));
             });
             const insert = () => {
                 let keys = Object.keys(this.schema), values = "", cols = "";

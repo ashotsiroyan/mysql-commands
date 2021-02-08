@@ -64,6 +64,16 @@ Or just do it all at once
 `const MyModel = mysql.model('ModelName', mySchema);`
 The first argument is the singular name of the table your model is for. 
 
+
+Once we have our model, we can then instantiate it, and save it:
+```
+const instance = new MyModel();
+instance.key = 'hello';
+instance.save(function (err) {
+  //
+});
+```
+
 We can find documents from the same table
 
 ```
@@ -75,7 +85,7 @@ You can also findOne, findById, update, etc.
 
 ```
 const instance = await MyModel.findOne({ ... }).exec();
-console.log(instance.my.key);  // 'hello'
+console.log(instance.key);  // 'hello'
 ```
 
 Important! If you opened a separate connection using mongoose.createConnection() but attempt to access the model through mongoose.model('ModelName') it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created.
