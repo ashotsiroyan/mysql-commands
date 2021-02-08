@@ -42,6 +42,34 @@ class Document {
     get isNew() {
         return __classPrivateFieldGet(this, _isNew);
     }
+    remove(callback) {
+        try {
+            if (this['_id']) {
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
+                return __classPrivateFieldGet(this, _checkDb).call(this, () => {
+                    return pool.execute(query)
+                        .then(() => {
+                        if (callback)
+                            callback(null, this);
+                        else
+                            return this;
+                    })
+                        .catch((err) => {
+                        throw err;
+                    });
+                });
+            }
+            else
+                throw "ID isn't filled.";
+        }
+        catch (err) {
+            if (callback) {
+                callback(err);
+            }
+            else
+                throw err;
+        }
+    }
     save(callback) {
         try {
             let query = this.isNew ? "INSERT INTO " + this.tableName : `UPDATE ${this.tableName} SET`;

@@ -74,6 +74,7 @@ interface DocumentParams{
     schema: SchemaDefinition;
     options: SchemaOptions;
     preSave: ((params:any, next: ()=> void ) => void) | undefined;
+    checkDb(next: ()=>any): any;
     table: string;
 }
 
@@ -116,7 +117,6 @@ interface IModel{
 
     exec(): Document[] | Promise<Document[]>;
     exec(callback: (err: any, res?: Document[])=>void): void;
-
 }
 
 class Model implements IModel{
@@ -138,6 +138,7 @@ class Model implements IModel{
             schema: SchemaParams.definition,
             options: SchemaParams.options,
             preSave: this.methods['save'],
+            checkDb: this.checkDb.bind(this),
             table: table
         }
     }
@@ -151,7 +152,6 @@ class Model implements IModel{
         return new Document({
             doc,
             ...this.documentParams,
-            checkDb: this.checkDb.bind(this),
             isNew: true
         });
     }
@@ -209,7 +209,6 @@ class Model implements IModel{
             const document = new Document({
                 doc: params,
                 ...this.documentParams,
-                checkDb: this.checkDb.bind(this),
                 isNew: true
             });
 
@@ -234,7 +233,6 @@ class Model implements IModel{
                     return new Document({
                         doc,
                         ...this.documentParams,
-                        checkDb: this.checkDb.bind(this),
                         isNew: true
                     });
                 });
@@ -582,7 +580,7 @@ class Model implements IModel{
                 throw err;
         }
     }
-    private checkDb(next: ()=>void){
+    private checkDb(next: ()=>any){
         return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.mysqlStructure})`)
             .then(()=>{
                 return next();

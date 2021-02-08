@@ -6,8 +6,8 @@ import {SchemaDefinition, SchemaOptions} from './Schema';
 const pool = mysql.pool;
 
 interface DocumentParams{
-    preSave: ((params: object, fn:()=>void)=>void) | undefined;
-    checkDb: (fn:()=>void)=>void;
+    preSave: ((params: object, fn:()=>void)=>any) | undefined;
+    checkDb: (next:()=>any)=>any;
     schema: SchemaDefinition;
     table: string;
     options: SchemaOptions;
@@ -15,9 +15,17 @@ interface DocumentParams{
     doc: object;
 }
 
-class Document{
-    #preSave: ((params: object, fn:()=>void)=>void) | undefined;
-    #checkDb: (fn:()=>void)=>any;
+interface IDocument{
+    remove(): Document | Promise<Document>;
+    remove(callback: (err: any, res?: Document)=> void): void;
+
+    save(): Document | Promise<Document>;
+    save(callback: (err: any, res?: Document)=> void): void;
+}
+
+class Document implements IDocument{
+    #preSave: ((params: object, fn:()=>void)=>any) | undefined;
+    #checkDb: (next:()=>any)=>any;
     #schema: SchemaDefinition;
     #table: string;
     #options: SchemaOptions;
@@ -33,11 +41,42 @@ class Document{
 
         this.convertData({doc: params.doc});
     }
+
     get tableName(){
         return this.#table;
     }
     get isNew(){
         return this.#isNew;
+    }
+
+    remove(): Document | Promise<Document>;
+    remove(callback: (err: any, res?: Document)=> void): void;
+    remove(callback?: (err: any, res?: Document)=> void){
+        try{
+            if(this['_id']){
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
+                
+                return this.#checkDb(()=>{
+                    return pool.execute(query)
+                        .then(()=>{
+                            if(callback)
+                                callback(null, this);
+                            else
+                                return this;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
+            }
+            else
+                throw "ID isn't filled."
+        }catch(err){
+            if(callback){
+                callback(err);
+            }else
+                throw err;
+        }
     }
 
     save(): Document | Promise<Document>;
