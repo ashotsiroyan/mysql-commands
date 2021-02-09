@@ -17,10 +17,13 @@ type SchemaDefinitionParams = {
     null?: boolean;
     unsigned?: boolean;
     unique?: boolean;
+    trim?: boolean;
+    lowercase?: boolean;
+    uppercase?: boolean;
     [other: string]: any;
 }
 
-type SchemaIndex = {
+interface SchemaIndex{
     [field: string]: string
 }
 
@@ -30,8 +33,8 @@ export interface SchemaOptions {
 }
 
 export interface SchemaMethods {
-    ['save']?: (params:any, next: ()=> void ) => void;
-    ['update']?: (params:any, next: ()=> void ) => void;
+    save?: (params:any, next: ()=> void ) => void;
+    update?: (params:any, next: ()=> void ) => void;
 }
 
 export interface SchemaDefinition{
@@ -39,36 +42,34 @@ export interface SchemaDefinition{
 }
 
 class Schema{
-    private mysql:string = "";
+    private indexes:any = {};
     private options: SchemaOptions;
     private definition: SchemaDefinition;
     private methods: SchemaMethods;
-    constructor(definition: SchemaDefinition, options: SchemaOptions = {}){
+    constructor(definition: SchemaDefinition, options: SchemaOptions){
         this.definition = definition;
         this.options = options;
         this.methods = {};
-
-        this.convertToString();
     }
-    getParams(){
-        return {
-            sqlString: this.mysql,
+    public get SchemaParams(){
+        return({
+            sqlString: this.convertToString(),
             definition: this.definition,
             methods: this.methods,
             options: this.options
-        }
+        })
     }
     pre(method: 'save' | 'update', callBack: (params: Document, next: ()=> void ) => void){
         this.methods[method] = callBack;
     }
-    index(fields: SchemaIndex){
-        let indexes:any = {},
-            sqlString:string = "";
-        
-        const exists = (name:string) =>{
+    remove(field: string){
+        delete this.definition[field];
+    }
+    index(fields: SchemaIndex){      
+        const exists = (name: string) =>{
             let is = false;
 
-            Object.keys(indexes).forEach((key)=>{
+            Object.keys(this.indexes).forEach((key)=>{
                 if(name === key){
                     is = true;
                     return true;
@@ -81,27 +82,17 @@ class Schema{
         Object.keys(fields).forEach((key)=>{
             if(this.definition[key] !== undefined){
                 if(!exists(fields[key])){
-                    indexes[fields[key]] = [key];
+                    this.indexes[fields[key]] = [key];
                 }else{
-                    indexes[fields[key]].push(key);
+                    this.indexes[fields[key]].push(key);
                 }
             }
         });
-
-        Object.keys(indexes).forEach((index, i)=>{
-            sqlString += `INDEX ${index} (`;
-
-            indexes[index].forEach((field:any, j:number)=>{
-                sqlString += `${field}${j !== indexes[index].length - 1?', ':''}`;
-            });
-
-            sqlString += `)${i !== Object.keys(indexes).length - 1?', ':''}`;
-        });
-
-        this.mysql += ', ' + sqlString;
     }
     private convertToString(){
         const hasId = this.options._id === undefined || this.options._id?true:false;
+        let mysql: string = "",
+            indexSql: string = "";
 
         if(hasId)
             this.definition = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.definition};
@@ -111,7 +102,7 @@ class Schema{
             
         Object.keys(this.definition).forEach((field, i)=>{
             let option = this.definition[field];
-            this.mysql += `${field} `;
+            mysql += `${field} `;
 
             if(typeof option !== 'string'){
                 let size = "";
@@ -131,7 +122,7 @@ class Schema{
                     size = `(${dataTypesOptions[option.type as string].default})`;
                 }
                 
-                this.mysql += `${option.type}${size} `;
+                mysql += `${option.type}${size} `;
 
                 if(option.null === undefined)
                     option.null = false;
@@ -140,22 +131,38 @@ class Schema{
                     option = option as SchemaDefinitionParams;
 
                     if(key === 'null')
-                        this.mysql += `${!option[key]?"NOT ":""}NULL`; 
+                        mysql += `${!option[key]?"NOT ":""}NULL`; 
                     else if(key === 'autoinc' && option[key])
-                        this.mysql += `AUTO_INCREMENT ${!hasId?'PRIMARY':'UNIQUE'} KEY`; 
+                        mysql += `AUTO_INCREMENT ${!hasId?'PRIMARY':'UNIQUE'} KEY`; 
                     else if((key === 'primaryKey' || key === 'unsigned' || key === 'unique') && option[key])
-                        this.mysql += `${key === 'primaryKey'?'PRIMARY KEY':key === 'unsigned'?'UNSIGNED':'UNIQUE KEY'}`;
+                        mysql += `${key === 'primaryKey'?'PRIMARY KEY':key === 'unsigned'?'UNSIGNED':'UNIQUE KEY'}`;
 
                     if(key !== 'size' && key !== 'type' && j !== Object.keys(option).length - 1)
-                        this.mysql += " ";
+                        mysql += " ";
                 });
             }else{
-                this.mysql += `${option}${dataTypesOptions[option as string].default?"(" + dataTypesOptions[option as string].default + ")":""} NOT NULL`;
+                mysql += `${option}${dataTypesOptions[option as string].default?"(" + dataTypesOptions[option as string].default + ")":""} NOT NULL`;
             }
 
             if(i !== Object.keys(this.definition).length - 1)
-                this.mysql += ", ";
+                mysql += ", ";
         });
+
+        Object.keys(this.indexes).forEach((index, i)=>{
+            indexSql += `INDEX ${index} (`;
+
+            this.indexes[index].forEach((field:any, j:number)=>{
+                if(this.definition[field])
+                    indexSql += `${field}${j !== this.indexes[index].length - 1?', ':''}`;
+            });
+
+            indexSql += `)${i !== Object.keys(this.indexes).length - 1?', ':''}`;
+        });
+
+        if(indexSql.trim() !== '')
+            mysql += ', ' + indexSql;
+
+        return mysql;
     }
 }
 

@@ -107,10 +107,20 @@ class Document implements IDocument{
                     }
                 });
                 
-                if(this.isNew)
-                    query += ` (${cols.slice(0, -2)}) VALUES (${values.slice(0, -2)})`;
-                else
-                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this['_id'])}`;
+                if(this.isNew){
+                    if(cols.slice(-2) === ', ')
+                        cols = cols.slice(0, -2);
+                        
+                    if(values.slice(-2) === ', ')
+                        values = values.slice(0, -2);
+
+                    query += ` (${cols}) VALUES (${values})`;
+                }else{
+                    if(updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
+
+                    query += ` ${updateString} WHERE _id = ${pool.escape(this['_id'])}`;
+                }
             }
 
 
@@ -156,6 +166,19 @@ class Document implements IDocument{
                 else if(defaultValue)
                     value = defaultValue;
     
+                if(typeof this.#schema[key] !== 'string'){
+                    let def = (this.#schema[key] as SchemaDefinition);
+
+                    if(def.lowercase)
+                        value = value.toLowerCase();
+
+                    if(def.uppercase)
+                        value = value.toUpperCase();
+
+                    if(def.trim)
+                        value = value.trim();
+                }
+                
                 if(hasId && key === '_id')
                     value = ObjectId();
     

@@ -1,7 +1,7 @@
 import mysql from './mysql';
 import actions from './plugins/actions';
 import Document from './Document';
-import {returnParams, SchemaDefinition, SchemaMethods, SchemaOptions} from './Schema';
+import Schema, {returnParams, SchemaDefinition, SchemaMethods, SchemaOptions} from './Schema';
 
 const pool = mysql.pool;
 
@@ -81,14 +81,14 @@ interface DocumentParams{
 interface IModel{
     new: (doc?: any)=> Document;
 
-    find(conditions?: object, fields?: any[]): this;
-    find(conditions: object, fields: any[], callback: (err: any, res?: Document[])=>void): void;
+    find(conditions?: object, fields?: string[]): this;
+    find(conditions: object, fields: string[], callback: (err: any, res?: Document[])=>void): this;
 
-    findOne(conditions?: object, fields?: any[]): this;
-    findOne(conditions: object, fields: any[], callback: (err: any, res?: Document[])=>void): void;
+    findOne(conditions?: object, fields?: string[]): this;
+    findOne(conditions: object, fields: string[], callback: (err: any, res?: Document[])=>void): this;
 
-    findById(id: string, fields?: any[]): this;
-    findById(id: string, fields: any[], callback: (err: any, res?: Document[])=>void): void;
+    findById(id: string, fields?: string[]): this;
+    findById(id: string, fields: string[], callback: (err: any, res?: Document[])=>void): this;
 
     insertOne(params: object): Document | Promise<Document>;
     insertOne(params: object, callback: (err: any, res?: Document)=>void): void;
@@ -130,13 +130,16 @@ class Model implements IModel{
         err: null
     };
     private documentParams: DocumentParams;
-    constructor(table: string, SchemaParams: returnParams){
-        this.mysqlStructure = SchemaParams.sqlString;
-        this.methods = SchemaParams.methods;
+    constructor(table: string, Schema: Schema){
+        let params: returnParams;
+        params = Schema.SchemaParams;
+
+        this.mysqlStructure = params.sqlString;
+        this.methods = params.methods;
 
         this.documentParams = {
-            schema: SchemaParams.definition,
-            options: SchemaParams.options,
+            schema: params.definition,
+            options: params.options,
             preSave: this.methods['save'],
             checkDb: this.checkDb.bind(this),
             table: table
@@ -156,37 +159,37 @@ class Model implements IModel{
         });
     }
 
-    find(conditions?: object, fields?: any[]): this
-    find(conditions: object, fields: any[], callback: (err: any, res?: Document[])=>void): void
-    find(conditions?: object, fields?: any[], callback?: (err: any, res?: Document[])=>void){
+    find(conditions?: object, fields?: string[]): this
+    find(conditions: object, fields: string[], callback: (err: any, res?: Document[])=>void): this
+    find(conditions?: object, fields?: string[], callback?: (err: any, res?: Document[])=>void){
         let query = "SELECT";
 
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`;
         this.query.main = query;
 
         if(callback)
-            return this.exec(callback);
+            this.exec(callback);
 
         return this as Model;
     }
 
-    findOne(conditions?: object, fields?: any[]): this
-    findOne(conditions: object, fields: any[], callback: (err: any, res?: Document[])=>void): void
-    findOne(conditions?: object, fields?: any[], callback?: (err: any, res?: Document[])=>void){
+    findOne(conditions?: object, fields?: string[]): this
+    findOne(conditions: object, fields: string[], callback: (err: any, res?: Document[])=>void): this
+    findOne(conditions?: object, fields?: string[], callback?: (err: any, res?: Document[])=>void){
         let query = "SELECT";
 
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`;
         this.query.main = query;
 
         if(callback)
-            return this.exec(callback);
+            this.exec(callback);
 
         return this as Model;
     }
 
-    findById(id: string, fields?: any[]): this
-    findById(id: string, fields: any[], callback: (err: any, res?: Document[])=>void): void
-    findById(id: string, fields?: any[], callback?: (err: any, res?: Document[])=>void){
+    findById(id: string, fields?: string[]): this
+    findById(id: string, fields: string[], callback: (err: any, res?: Document[])=>void): this
+    findById(id: string, fields?: string[], callback?: (err: any, res?: Document[])=>void){
         if(id){
             let query = "SELECT";
     
@@ -194,11 +197,16 @@ class Model implements IModel{
             this.query.main = query;
 
             if(callback)
-                return this.exec(callback);
+                this.exec(callback);
     
             return this as Model;
         }else{
-            this.query.err = "ID isn't filled."
+            let err = "ID isn't filled.";
+
+            if(callback)
+                callback(err);
+            else
+                this.query.err = "ID isn't filled."
         }
     }
 
@@ -247,13 +255,13 @@ class Model implements IModel{
                         let value = pool.escape(row[key]);
         
                         if(i === 0)
-                            cols += `${key}, `;
+                            cols += `${key}${j !== keys.length - 1?', ':''}`;
 
                         values += `${j === 0?'(':''}${value}${j !== keys.length - 1?', ':i === params.length - 1?')':'), '}`;
                     });
                 });
     
-                query += ` (${cols.slice(0, -2)}) VALUES ${values}`;
+                query += ` (${cols}) VALUES ${values}`;
             }
 
             if(this.methods.save !== undefined){
@@ -311,8 +319,11 @@ class Model implements IModel{
                             }
                         }
                     });
+
+                    if(updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
     
-                    query += ` ${updateString.slice(0, -2)} ${filterFileds}`;
+                    query += ` ${updateString} ${filterFileds}`;
                 }
 
                 if(this.methods.update)
@@ -369,7 +380,10 @@ class Model implements IModel{
                         }
                     });
 
-                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(id)}`;
+                    if(updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
+
+                    query += ` ${updateString} WHERE _id = ${pool.escape(id)}`;
                 }
 
                 if(this.methods.update)
@@ -580,7 +594,7 @@ class Model implements IModel{
                 throw err;
         }
     }
-    private checkDb(next: ()=>any){
+    private checkDb( next: ()=> any ){
         return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.mysqlStructure})`)
             .then(()=>{
                 return next();

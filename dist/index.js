@@ -30,6 +30,6 @@ function connect(params) {
 }
 exports.connect = connect;
 function model(table, Schema) {
-    return new Model_1.default(table, Schema.getParams());
+    return new Model_1.default(table, Schema);
 }
 exports.model = model;

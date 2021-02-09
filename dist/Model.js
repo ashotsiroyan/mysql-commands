@@ -63,7 +63,7 @@ function getFileds(arg) {
     return showFileds;
 }
 class Model {
-    constructor(table, SchemaParams) {
+    constructor(table, Schema) {
         this.query = {
             main: "",
             skip: "",
@@ -71,11 +71,13 @@ class Model {
             limit: "",
             err: null
         };
-        this.mysqlStructure = SchemaParams.sqlString;
-        this.methods = SchemaParams.methods;
+        let params;
+        params = Schema.SchemaParams;
+        this.mysqlStructure = params.sqlString;
+        this.methods = params.methods;
         this.documentParams = {
-            schema: SchemaParams.definition,
-            options: SchemaParams.options,
+            schema: params.definition,
+            options: params.options,
             preSave: this.methods['save'],
             checkDb: this.checkDb.bind(this),
             table: table
@@ -95,7 +97,7 @@ class Model {
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`;
         this.query.main = query;
         if (callback)
-            return this.exec(callback);
+            this.exec(callback);
         return this;
     }
     findOne(conditions, fields, callback) {
@@ -103,7 +105,7 @@ class Model {
         query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`;
         this.query.main = query;
         if (callback)
-            return this.exec(callback);
+            this.exec(callback);
         return this;
     }
     findById(id, fields, callback) {
@@ -112,11 +114,15 @@ class Model {
             query += ` ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
             this.query.main = query;
             if (callback)
-                return this.exec(callback);
+                this.exec(callback);
             return this;
         }
         else {
-            this.query.err = "ID isn't filled.";
+            let err = "ID isn't filled.";
+            if (callback)
+                callback(err);
+            else
+                this.query.err = "ID isn't filled.";
         }
     }
     insertOne(params = {}, callback) {
@@ -145,11 +151,11 @@ class Model {
                     keys.forEach((key, j) => {
                         let value = pool.escape(row[key]);
                         if (i === 0)
-                            cols += `${key}, `;
+                            cols += `${key}${j !== keys.length - 1 ? ', ' : ''}`;
                         values += `${j === 0 ? '(' : ''}${value}${j !== keys.length - 1 ? ', ' : i === params.length - 1 ? ')' : '), '}`;
                     });
                 });
-                query += ` (${cols.slice(0, -2)}) VALUES ${values}`;
+                query += ` (${cols}) VALUES ${values}`;
             };
             if (this.methods.save !== undefined) {
                 docs.forEach((doc, i) => {
@@ -199,7 +205,9 @@ class Model {
                             }
                         }
                     });
-                    query += ` ${updateString.slice(0, -2)} ${filterFileds}`;
+                    if (updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
+                    query += ` ${updateString} ${filterFileds}`;
                 };
                 if (this.methods.update)
                     this.methods.update(update, insert);
@@ -247,7 +255,9 @@ class Model {
                             }
                         }
                     });
-                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(id)}`;
+                    if (updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
+                    query += ` ${updateString} WHERE _id = ${pool.escape(id)}`;
                 };
                 if (this.methods.update)
                     this.methods.update(update, insert);

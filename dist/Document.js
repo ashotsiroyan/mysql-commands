@@ -88,10 +88,18 @@ class Document {
                         updateString += `${key} = ${value}, `;
                     }
                 });
-                if (this.isNew)
-                    query += ` (${cols.slice(0, -2)}) VALUES (${values.slice(0, -2)})`;
-                else
-                    query += ` ${updateString.slice(0, -2)} WHERE _id = ${pool.escape(this['_id'])}`;
+                if (this.isNew) {
+                    if (cols.slice(-2) === ', ')
+                        cols = cols.slice(0, -2);
+                    if (values.slice(-2) === ', ')
+                        values = values.slice(0, -2);
+                    query += ` (${cols}) VALUES (${values})`;
+                }
+                else {
+                    if (updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
+                    query += ` ${updateString} WHERE _id = ${pool.escape(this['_id'])}`;
+                }
             };
             if (__classPrivateFieldGet(this, _preSave))
                 __classPrivateFieldGet(this, _preSave).call(this, this, insert);
@@ -131,6 +139,15 @@ class Document {
                     value = doc[key];
                 else if (defaultValue)
                     value = defaultValue;
+                if (typeof __classPrivateFieldGet(this, _schema)[key] !== 'string') {
+                    let def = __classPrivateFieldGet(this, _schema)[key];
+                    if (def.lowercase)
+                        value = value.toLowerCase();
+                    if (def.uppercase)
+                        value = value.toUpperCase();
+                    if (def.trim)
+                        value = value.trim();
+                }
                 if (hasId && key === '_id')
                     value = ObjectId_1.default();
                 this[key] = value;

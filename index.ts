@@ -15,7 +15,7 @@ async function connect(params: connectionParams){
 }
 
 function model(table: string, Schema: Schema){
-    return new Model(table, Schema.getParams());
+    return new Model(table, Schema);
 }
 
 export {
