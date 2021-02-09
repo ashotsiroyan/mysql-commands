@@ -1,10 +1,10 @@
-### MySQL commands
+# MySQL commands
 MySQL commands is a MySQL object modeling tool designed to work in an asynchronous environment. MySQL commands supports both promises and callbacks.
 
-### Installation
+## Installation
 `$ npm install @ashotsiroyan/mysql-commands`
 
-### Importing
+## Importing
 ```
 // Using Node.js `require()`
 const mysql = require('@ashotsiroyan/mysql-commands');
@@ -13,8 +13,9 @@ const mysql = require('@ashotsiroyan/mysql-commands');
 import mysql from '@ashotsiroyan/mysql-commands';
 ```
 
-### Overview
-Connecting to MySQL
+## Overview
+
+### Connecting to MySQL
 
 ```
 await mysql.connect({

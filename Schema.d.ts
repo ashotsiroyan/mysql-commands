@@ -15,35 +15,39 @@ declare type SchemaDefinitionParams = {
     null?: boolean;
     unsigned?: boolean;
     unique?: boolean;
+    trim?: boolean;
+    lowercase?: boolean;
+    uppercase?: boolean;
     [other: string]: any;
 };
-declare type SchemaIndex = {
+interface SchemaIndex {
     [field: string]: string;
-};
+}
 export interface SchemaOptions {
     _id?: boolean;
     timestamps?: boolean;
 }
 export interface SchemaMethods {
-    ['save']?: (params: any, next: () => void) => void;
-    ['update']?: (params: any, next: () => void) => void;
+    save?: (params: any, next: () => void) => void;
+    update?: (params: any, next: () => void) => void;
 }
 export interface SchemaDefinition {
     [filed: string]: SchemaDefinitionParams | dataTypes;
 }
 declare class Schema {
-    private mysql;
+    private indexes;
     private options;
     private definition;
     private methods;
-    constructor(definition: SchemaDefinition, options?: SchemaOptions);
-    getParams(): {
+    constructor(definition: SchemaDefinition, options: SchemaOptions);
+    get SchemaParams(): {
         sqlString: string;
         definition: SchemaDefinition;
         methods: SchemaMethods;
         options: SchemaOptions;
     };
     pre(method: 'save' | 'update', callBack: (params: Document, next: () => void) => void): void;
+    remove(field: string): void;
     index(fields: SchemaIndex): void;
     private convertToString;
 }
