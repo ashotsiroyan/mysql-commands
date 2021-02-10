@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mysql_1 = __importDefault(require("./mysql"));
 const actions_1 = __importDefault(require("./plugins/actions"));
 const Document_1 = __importDefault(require("./Document"));
+const DocumentQuery_1 = __importDefault(require("./DocumentQuery"));
 const pool = mysql_1.default.pool;
 function getConditions(arg) {
     let filterFileds = "";
@@ -28,15 +29,13 @@ function getConditions(arg) {
                         }
                         else if (field === '$in' || field === '$nin') {
                             params[field].forEach((value) => {
-                                filterFileds += `${prevField} ${actions_1.default[field]} ${pool.escape(value)} AND `;
+                                filterFileds += `${prevField} ${actions_1.default[field]} ${pool.escape(value)} OR `;
                             });
                         }
                     }
                 }
                 else {
                     let value = params[field];
-                    // if(typeof value === 'string')
-                    //     value = "'" + value + "'";
                     if (field[0] === '$') {
                         filterFileds += `${prevField} ${actions_1.default[field]} ${pool.escape(value)}${i !== Object.keys(params).length - 1 ? ' AND ' : ''}`;
                     }
@@ -50,6 +49,8 @@ function getConditions(arg) {
     closer({ params: arg });
     if (filterFileds.slice(-5) === ' AND ')
         filterFileds = filterFileds.slice(0, -5);
+    if (filterFileds.slice(-4) === ' OR ')
+        filterFileds = filterFileds.slice(0, -4);
     if (filterFileds.trim() !== "")
         filterFileds = "WHERE " + filterFileds;
     return filterFileds;
@@ -64,18 +65,11 @@ function getFileds(arg) {
 }
 class Model {
     constructor(table, Schema) {
-        this.query = {
-            main: "",
-            skip: "",
-            sort: "",
-            limit: "",
-            err: null
-        };
         let params;
         params = Schema.SchemaParams;
         this.mysqlStructure = params.sqlString;
         this.methods = params.methods;
-        this.documentParams = {
+        this.docProps = {
             schema: params.definition,
             options: params.options,
             preSave: this.methods['save'],
@@ -84,50 +78,57 @@ class Model {
         };
     }
     get schema() {
-        return this.documentParams.schema;
+        return this.docProps.schema;
     }
     get tableName() {
-        return this.documentParams.table;
+        return this.docProps.table;
     }
     new(doc) {
-        return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { isNew: true }));
+        return new Document_1.default(Object.assign(Object.assign({ doc }, this.docProps), { isNew: true }));
     }
     find(conditions, fields, callback) {
-        let query = "SELECT";
-        query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`;
-        this.query.main = query;
+        if (typeof conditions === 'function') {
+            callback = conditions;
+            conditions = {};
+            fields = null;
+        }
+        else if (typeof fields === 'function') {
+            callback = fields;
+            fields = null;
+        }
+        const query = new DocumentQuery_1.default(`SELECT ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`, this.docProps, 'find');
         if (callback)
-            this.exec(callback);
-        return this;
+            query.exec(callback);
+        return query;
     }
     findOne(conditions, fields, callback) {
-        let query = "SELECT";
-        query += ` ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`;
-        this.query.main = query;
+        if (typeof conditions === 'function') {
+            callback = conditions;
+            conditions = {};
+            fields = null;
+        }
+        else if (typeof fields === 'function') {
+            callback = fields;
+            fields = null;
+        }
+        const query = new DocumentQuery_1.default(`SELECT ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`, this.docProps, 'findOne');
         if (callback)
-            this.exec(callback);
-        return this;
+            query.exec(callback);
+        return query;
     }
     findById(id, fields, callback) {
-        if (id) {
-            let query = "SELECT";
-            query += ` ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`;
-            this.query.main = query;
-            if (callback)
-                this.exec(callback);
-            return this;
+        if (typeof fields === 'function') {
+            callback = fields;
+            fields = null;
         }
-        else {
-            let err = "ID isn't filled.";
-            if (callback)
-                callback(err);
-            else
-                this.query.err = "ID isn't filled.";
-        }
+        const query = new DocumentQuery_1.default(`SELECT ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`, this.docProps, 'findById');
+        if (callback)
+            query.exec(callback);
+        return query;
     }
     insertOne(params = {}, callback) {
         try {
-            const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.documentParams), { isNew: true }));
+            const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.docProps), { isNew: true }));
             if (callback)
                 document.save(callback);
             else
@@ -143,7 +144,7 @@ class Model {
     insertMany(params = [], callback) {
         try {
             let query = "INSERT INTO " + this.tableName, docs = params.map((doc) => {
-                return new Document_1.default(Object.assign(Object.assign({ doc }, this.documentParams), { isNew: true }));
+                return new Document_1.default(Object.assign(Object.assign({ doc }, this.docProps), { isNew: true }));
             });
             const insert = () => {
                 let keys = Object.keys(this.schema), values = "", cols = "";
@@ -197,7 +198,7 @@ class Model {
                     Object.keys(this.schema).forEach((key) => {
                         if (key !== '_id' && key !== 'id') {
                             let value = update[key];
-                            if (this.documentParams.options.timestamps && key === '_updatedAt')
+                            if (this.docProps.options.timestamps && key === '_updatedAt')
                                 value = new Date();
                             if (value) {
                                 value = pool.escape(value);
@@ -247,7 +248,7 @@ class Model {
                     Object.keys(this.schema).forEach((key) => {
                         if (key !== '_id' && key !== 'id') {
                             let value = update[key];
-                            if (this.documentParams.options.timestamps && key === '_updatedAt')
+                            if (this.docProps.options.timestamps && key === '_updatedAt')
                                 value = new Date();
                             if (value) {
                                 value = pool.escape(value);
@@ -343,40 +344,6 @@ class Model {
                 throw err;
         }
     }
-    limit(val) {
-        if (this.query.main !== "") {
-            if (val) {
-                this.query.limit = " LIMIT " + val;
-            }
-        }
-        else
-            this.query.err = "Order Error: .find().limit()";
-        return this;
-    }
-    skip(val) {
-        if (this.query.main !== "") {
-            if (val) {
-                this.query.skip = " OFFSET " + val;
-            }
-        }
-        else
-            this.query.err = "Order Error: .find().skip()";
-        return this;
-    }
-    sort(arg) {
-        if (this.query.main !== "") {
-            if (Object.keys(arg).length > 0) {
-                let query = " ORDER BY ";
-                Object.keys(arg).forEach((key, i) => {
-                    query += `${key} ${arg[key] === -1 ? 'DESC' : 'ASC'}${i !== Object.keys(arg).length - 1 ? ', ' : ''}`;
-                });
-                this.query.sort = query;
-            }
-        }
-        else
-            this.query.err = "Order Error: .find().sort()";
-        return this;
-    }
     countDocuments(conditions, callback) {
         try {
             let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
@@ -391,54 +358,6 @@ class Model {
             });
         }
         catch (err) {
-            if (callback)
-                callback(err);
-            else
-                throw err;
-        }
-    }
-    exec(callback) {
-        try {
-            if (this.query.err)
-                throw this.query.err;
-            let { main, limit, sort, skip } = this.query;
-            if (main !== "") {
-                let query = main + sort + limit + (limit !== '' ? skip : '');
-                return this.checkDb(() => {
-                    return pool.execute(query)
-                        .then(([rows]) => {
-                        this.query = {
-                            main: "",
-                            skip: "",
-                            sort: "",
-                            limit: "",
-                            err: null
-                        };
-                        let res = rows.map((row) => {
-                            return new Document_1.default(Object.assign(Object.assign({ doc: row }, this.documentParams), { checkDb: this.checkDb.bind(this) }));
-                        });
-                        if (callback)
-                            callback(null, res);
-                        else
-                            return res;
-                    })
-                        .catch((err) => {
-                        throw err;
-                    });
-                });
-            }
-            else {
-                throw "Order Error: .find().exec()";
-            }
-        }
-        catch (err) {
-            this.query = {
-                main: "",
-                skip: "",
-                sort: "",
-                limit: "",
-                err: null
-            };
             if (callback)
                 callback(err);
             else
