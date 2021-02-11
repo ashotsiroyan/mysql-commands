@@ -2,7 +2,7 @@ import mysql from './mysql';
 import actions from './plugins/actions';
 import Document from './Document';
 import DocumentQuery from './DocumentQuery';
-import Schema, {returnParams, SchemaDefinition, SchemaMethods, SchemaOptions} from './Schema';
+import Schema from './Schema';
 
 const pool = mysql.pool;
 
@@ -91,10 +91,7 @@ type FilterQuery = {
 }
 
 export interface DocProps{
-    schema: SchemaDefinition;
-    options: SchemaOptions;
-    preSave: ((params:any, next: ()=> void ) => void) | undefined;
-    checkDb(next: ()=>any): any;
+    schema: Schema;
     table: string;
 }
 
@@ -133,30 +130,22 @@ interface IModel{
 }
 
 class Model implements IModel{
-    private mysqlStructure: string;
-    private methods: SchemaMethods;
     private docProps: DocProps;
-    constructor(table: string, Schema: Schema){
-        let params: returnParams;
-        params = Schema.SchemaParams;
+    public readonly schema: Schema;
 
-        this.mysqlStructure = params.sqlString;
-        this.methods = params.methods;
+    constructor(table: string, Schema: Schema){
+        this.schema = Schema;
 
         this.docProps = {
-            schema: params.definition,
-            options: params.options,
-            preSave: this.methods['save'],
-            checkDb: this.checkDb.bind(this),
+            schema: this.schema,
             table: table
         }
     }
-    get schema(){
-        return this.docProps.schema;
-    }
+
     get tableName(){
         return this.docProps.table;
     }
+
     new(doc?: any){
         return new Document({
             doc,
@@ -227,11 +216,7 @@ class Model implements IModel{
     insertOne(params: object, callback: (err: any, res?: Document)=>void): void
     insertOne(params: object = {}, callback?: (err: any, res?: Document)=>void){
         try{
-            const document = new Document({
-                doc: params,
-                ...this.docProps,
-                isNew: true
-            });
+            const document = this.new(params);
 
             if(callback)
                 document.save(callback);
@@ -251,15 +236,11 @@ class Model implements IModel{
         try{
             let query = "INSERT INTO " + this.tableName,
                 docs: Document[] = params.map((doc)=>{
-                    return new Document({
-                        doc,
-                        ...this.docProps,
-                        isNew: true
-                    });
+                    return this.new(doc);
                 });
 
             const insert = () =>{       
-                let keys = Object.keys(this.schema),
+                let keys = Object.keys(this.schema.obj),
                     values = "",
                     cols = "";
 
@@ -277,11 +258,10 @@ class Model implements IModel{
                 query += ` (${cols}) VALUES ${values}`;
             }
 
-            if(this.methods.save !== undefined){
+            if(this.schema.methods.save){
                 docs.forEach((doc, i)=>{
-                    if(this.methods.save !== undefined) {
-                        this.methods.save(doc, ()=>{if(i === docs.length - 1) insert();});
-                    }
+                    if(this.schema.methods.save)
+                        this.schema.methods.save(doc, ()=>{if(i === docs.length - 1) insert();});
                 });
             }else
                 insert();
@@ -318,11 +298,11 @@ class Model implements IModel{
                 const insert = () =>{
                     let updateString = "";
 
-                    Object.keys(this.schema).forEach((key)=>{
+                    Object.keys(this.schema.obj).forEach((key)=>{
                         if(key !== '_id' && key !== 'id'){
                             let value = update[key];
 
-                            if(this.docProps.options.timestamps && key === '_updatedAt')
+                            if(this.schema.options.timestamps && key === '_updatedAt')
                                 value = new Date();
         
                             if(value){
@@ -339,8 +319,8 @@ class Model implements IModel{
                     query += ` ${updateString} ${filterFileds}`;
                 }
 
-                if(this.methods.update)
-                    this.methods.update(update, insert);
+                if(this.schema.methods.update)
+                    this.schema.methods.update(update, insert);
                 else
                     insert();
     
@@ -378,11 +358,11 @@ class Model implements IModel{
                 const insert = () =>{
                     let updateString = "";
 
-                    Object.keys(this.schema).forEach((key)=>{
+                    Object.keys(this.schema.obj).forEach((key)=>{
                         if(key !== '_id' && key !== 'id'){
                             let value = update[key];
 
-                            if(this.docProps.options.timestamps && key === '_updatedAt')
+                            if(this.schema.options.timestamps && key === '_updatedAt')
                                 value = new Date();
         
                             if(value){
@@ -399,8 +379,8 @@ class Model implements IModel{
                     query += ` ${updateString} WHERE _id = ${pool.escape(id)}`;
                 }
 
-                if(this.methods.update)
-                    this.methods.update(update, insert);
+                if(this.schema.methods.update)
+                    this.schema.methods.update(update, insert);
                 else
                     insert();
 
@@ -513,7 +493,7 @@ class Model implements IModel{
         }
     }
     private checkDb( next: ()=> any ){
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.mysqlStructure})`)
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
             .then(()=>{
                 return next();
             })

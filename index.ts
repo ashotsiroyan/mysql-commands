@@ -3,7 +3,6 @@ import Model from './Model';
 import Schema from './Schema';
 
 
-
 async function connect(params: connectionParams){
     try{
         await mysql.connect(params);

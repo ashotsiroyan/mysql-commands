@@ -1,12 +1,6 @@
 import { dataTypes, dataTypesOptions } from './plugins/dataTypes';
 import Document from './Document';
 
-export interface returnParams{
-    sqlString: string;
-    definition: SchemaDefinition;
-    methods: SchemaMethods;
-    options: SchemaOptions;
-}
 
 type SchemaDefinitionParams = {
     type?: dataTypes;
@@ -27,12 +21,12 @@ interface SchemaIndex{
     [field: string]: string
 }
 
-export interface SchemaOptions {
+interface SchemaOptions {
     _id?: boolean;
     timestamps?: boolean;
 }
 
-export interface SchemaMethods {
+interface SchemaMethods {
     save?: (params:any, next: ()=> void ) => void;
     update?: (params:any, next: ()=> void ) => void;
 }
@@ -43,27 +37,24 @@ export interface SchemaDefinition{
 
 class Schema{
     private indexes:any = {};
-    private options: SchemaOptions;
-    private definition: SchemaDefinition;
-    private methods: SchemaMethods;
+    public readonly options: SchemaOptions;
+    public obj: SchemaDefinition;
+    public readonly methods: SchemaMethods;
+    public get query(){
+        return this.convertToString();
+    }
+
     constructor(definition: SchemaDefinition, options: SchemaOptions){
-        this.definition = definition;
+        this.obj = definition;
         this.options = options;
         this.methods = {};
     }
-    public get SchemaParams(){
-        return({
-            sqlString: this.convertToString(),
-            definition: this.definition,
-            methods: this.methods,
-            options: this.options
-        })
-    }
+
     pre(method: 'save' | 'update', callBack: (params: Document, next: ()=> void ) => void){
         this.methods[method] = callBack;
     }
     remove(field: string){
-        delete this.definition[field];
+        delete this.obj[field];
     }
     index(fields: SchemaIndex){      
         const exists = (name: string) =>{
@@ -80,7 +71,7 @@ class Schema{
         }
 
         Object.keys(fields).forEach((key)=>{
-            if(this.definition[key] !== undefined){
+            if(this.obj[key] !== undefined){
                 if(!exists(fields[key])){
                     this.indexes[fields[key]] = [key];
                 }else{
@@ -95,13 +86,13 @@ class Schema{
             indexSql: string = "";
 
         if(hasId)
-            this.definition = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.definition};
+            this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
 
         if(this.options.timestamps)
-            this.definition = {...this.definition, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
+            this.obj = {...this.obj, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
             
-        Object.keys(this.definition).forEach((field, i)=>{
-            let option = this.definition[field];
+        Object.keys(this.obj).forEach((field, i)=>{
+            let option = this.obj[field];
             mysql += `${field} `;
 
             if(typeof option !== 'string'){
@@ -144,7 +135,7 @@ class Schema{
                 mysql += `${option}${dataTypesOptions[option as string].default?"(" + dataTypesOptions[option as string].default + ")":""} NOT NULL`;
             }
 
-            if(i !== Object.keys(this.definition).length - 1)
+            if(i !== Object.keys(this.obj).length - 1)
                 mysql += ", ";
         });
 
@@ -152,7 +143,7 @@ class Schema{
             indexSql += `INDEX ${index} (`;
 
             this.indexes[index].forEach((field:any, j:number)=>{
-                if(this.definition[field])
+                if(this.obj[field])
                     indexSql += `${field}${j !== this.indexes[index].length - 1?', ':''}`;
             });
 

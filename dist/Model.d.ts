@@ -1,6 +1,6 @@
 import Document from './Document';
 import DocumentQuery from './DocumentQuery';
-import Schema, { SchemaDefinition, SchemaOptions } from './Schema';
+import Schema from './Schema';
 declare type QuerySelector = {
     $eq?: any;
     $gt?: any;
@@ -19,10 +19,7 @@ declare type FilterQuery = {
     [field: string]: QuerySelector | string | number;
 };
 export interface DocProps {
-    schema: SchemaDefinition;
-    options: SchemaOptions;
-    preSave: ((params: any, next: () => void) => void) | undefined;
-    checkDb(next: () => any): any;
+    schema: Schema;
     table: string;
 }
 interface IModel {
@@ -49,11 +46,9 @@ interface IModel {
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
 }
 declare class Model implements IModel {
-    private mysqlStructure;
-    private methods;
     private docProps;
+    readonly schema: Schema;
     constructor(table: string, Schema: Schema);
-    get schema(): SchemaDefinition;
     get tableName(): string;
     new(doc?: any): Document;
     find(callback?: (err: any, res?: Document[]) => void): DocumentQuery;

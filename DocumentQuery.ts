@@ -8,20 +8,23 @@ type SortType = {
     [field: string]: -1 | 1
 }
 
+type FunName = 'find' | 'findOne' | 'findById';
+
 class DocumentQuery{
     private mainQuery: string = "";
     private skipQuery: string = "";
     private sortQuery: any = "";
     private limitQuery: string = "";
+
     private docProps: DocProps;
-    private fnName: string;
-    private checkDb: ( next: ()=> any )=> any;
-    constructor(query: string, docProps: DocProps, fnName: string){
+    private fnName: FunName;
+
+    constructor(query: string, docProps: DocProps, fnName: FunName){
         this.mainQuery = query;
-        this.checkDb = docProps.checkDb;
         this.docProps = docProps;
         this.fnName = fnName;
     }
+
     limit(val: number | string){
         if(val){
             this.limitQuery = " LIMIT " + val;
@@ -96,6 +99,15 @@ class DocumentQuery{
             else
                 throw err;
         }
+    }
+    private checkDb( next: ()=> any ){
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
+            .then(()=>{
+                return next();
+            })
+            .catch((err: any)=>{
+                throw err;
+            });
     }
 }
 

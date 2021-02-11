@@ -54,6 +54,7 @@ Comment.pre('save', function (params, next) {
   next();
 });
 ```
+
 Take a look at the example in examples/schema/schema.js for an end-to-end example of a typical setup.
 
 ### Accessing a Model
@@ -76,20 +77,17 @@ instance.save(function (err) {
 ```
 
 We can find documents from the same table
-
 ```
 MyModel.find({}).exec(function (err, docs) {
   // docs.forEach
 });
 ```
-You can also findOne, findById, update, etc.
 
+You can also findOne, findById, update, etc.
 ```
 const instance = await MyModel.findOne({ ... }).exec();
 console.log(instance.key);  // 'hello'
 ```
-
-Important! If you opened a separate connection using mongoose.createConnection() but attempt to access the model through mongoose.model('ModelName') it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created.
 
 ```
 // retrieve my model
@@ -102,8 +100,8 @@ post.save(function (err) {
   if (!err) console.log('Success!');
 });
 ```
-The same goes for removing them:
 
+The same goes for removing them:
 ```
 BlogPost.findById(myId, function (err, post) {
   if (!err) {

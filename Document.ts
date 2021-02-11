@@ -1,16 +1,13 @@
 import mysql from './mysql';
 import ObjectId from './plugins/ObjectId';
 
-import {SchemaDefinition, SchemaOptions} from './Schema';
+import Schema, {SchemaDefinition} from './Schema';
 
 const pool = mysql.pool;
 
 interface DocumentParams{
-    preSave: ((params: object, fn:()=>void)=>any) | undefined;
-    checkDb: (next:()=>any)=>any;
-    schema: SchemaDefinition;
+    schema: Schema;
     table: string;
-    options: SchemaOptions;
     isNew?: boolean;
     doc: object;
 }
@@ -24,24 +21,22 @@ interface IDocument{
 }
 
 class Document implements IDocument{
-    #preSave: ((params: object, fn:()=>void)=>any) | undefined;
-    #checkDb: (next:()=>any)=>any;
-    #schema: SchemaDefinition;
+    #schema: Schema;
     #table: string;
-    #options: SchemaOptions;
     #isNew: boolean;
     [name: string]: any;
+
     constructor(params: DocumentParams){
-        this.#preSave = params.preSave;
-        this.#checkDb = params.checkDb;
         this.#schema = params.schema;
-        this.#options = params.options;
         this.#table = params.table;
         this.#isNew = params.isNew || false;
 
         this.convertData({doc: params.doc});
     }
 
+    get schema(){
+        return this.#schema;
+    }
     get tableName(){
         return this.#table;
     }
@@ -56,7 +51,7 @@ class Document implements IDocument{
             if(this['_id']){
                 let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
                 
-                return this.#checkDb(()=>{
+                return this.checkDb(()=>{
                     return pool.execute(query)
                         .then(()=>{
                             if(callback)
@@ -86,7 +81,7 @@ class Document implements IDocument{
             let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`;
 
             const insert = () =>{
-                let keys = Object.keys(this.#schema),
+                let keys = Object.keys(this.#schema.obj),
                     cols = "",
                     values = "",
                     updateString = "";
@@ -94,7 +89,7 @@ class Document implements IDocument{
                 keys.forEach((key)=>{
                     let value = this[key];
 
-                    if(!this.isNew && this.#options.timestamps && key === '_updatedAt')
+                    if(!this.isNew && this.#schema.options.timestamps && key === '_updatedAt')
                         value = new Date();
 
                     value = pool.escape(value);
@@ -124,12 +119,12 @@ class Document implements IDocument{
             }
 
 
-            if(this.#preSave)
-                this.#preSave(this, insert);
+            if(this.#schema.methods.save)
+                this.#schema.methods.save(this, insert);
             else
                 insert();
 
-            return this.#checkDb(()=>{
+            return this.checkDb(()=>{
                 return pool.execute(query)
                     .then(()=>{
                         if(callback)
@@ -149,16 +144,16 @@ class Document implements IDocument{
         }
     }
     private convertData({doc}: any){
-        const hasId = this.#options._id === undefined || this.#options._id?true:false;
+        const hasId = this.#schema.options._id === undefined || this.#schema.options._id?true:false;
 
-        let keys = Object.keys(this.#schema);
+        let keys = Object.keys(this.#schema.obj);
         keys.forEach((key)=>{
             if(this.isNew){
                 let defaultValue = undefined,
                     value:any = '';
 
-                if(typeof this.#schema[key] !== 'string'){
-                    defaultValue = (this.#schema[key] as SchemaDefinition).default;
+                if(typeof this.#schema.obj[key] !== 'string'){
+                    defaultValue = (this.#schema.obj[key] as SchemaDefinition).default;
                 }
 
                 if(doc[key])
@@ -166,8 +161,8 @@ class Document implements IDocument{
                 else if(defaultValue)
                     value = defaultValue;
     
-                if(typeof this.#schema[key] !== 'string'){
-                    let def = (this.#schema[key] as SchemaDefinition);
+                if(typeof this.#schema.obj[key] !== 'string'){
+                    let def = (this.#schema.obj[key] as SchemaDefinition);
 
                     if(def.lowercase)
                         value = value.toLowerCase();
@@ -187,6 +182,15 @@ class Document implements IDocument{
                 this[key] = doc[key];
             }
         });
+    }
+    private checkDb( next: ()=> any ){
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
+            .then(()=>{
+                return next();
+            })
+            .catch((err: any)=>{
+                throw err;
+            });
     }
 }
 

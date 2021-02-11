@@ -15,26 +15,23 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _preSave, _checkDb, _schema, _table, _options, _isNew;
+var _schema, _table, _isNew;
 Object.defineProperty(exports, "__esModule", { value: true });
 const mysql_1 = __importDefault(require("./mysql"));
 const ObjectId_1 = __importDefault(require("./plugins/ObjectId"));
 const pool = mysql_1.default.pool;
 class Document {
     constructor(params) {
-        _preSave.set(this, void 0);
-        _checkDb.set(this, void 0);
         _schema.set(this, void 0);
         _table.set(this, void 0);
-        _options.set(this, void 0);
         _isNew.set(this, void 0);
-        __classPrivateFieldSet(this, _preSave, params.preSave);
-        __classPrivateFieldSet(this, _checkDb, params.checkDb);
         __classPrivateFieldSet(this, _schema, params.schema);
-        __classPrivateFieldSet(this, _options, params.options);
         __classPrivateFieldSet(this, _table, params.table);
         __classPrivateFieldSet(this, _isNew, params.isNew || false);
         this.convertData({ doc: params.doc });
+    }
+    get schema() {
+        return __classPrivateFieldGet(this, _schema);
     }
     get tableName() {
         return __classPrivateFieldGet(this, _table);
@@ -46,7 +43,7 @@ class Document {
         try {
             if (this['_id']) {
                 let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
-                return __classPrivateFieldGet(this, _checkDb).call(this, () => {
+                return this.checkDb(() => {
                     return pool.execute(query)
                         .then(() => {
                         if (callback)
@@ -74,10 +71,10 @@ class Document {
         try {
             let query = this.isNew ? "INSERT INTO " + this.tableName : `UPDATE ${this.tableName} SET`;
             const insert = () => {
-                let keys = Object.keys(__classPrivateFieldGet(this, _schema)), cols = "", values = "", updateString = "";
+                let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj), cols = "", values = "", updateString = "";
                 keys.forEach((key) => {
                     let value = this[key];
-                    if (!this.isNew && __classPrivateFieldGet(this, _options).timestamps && key === '_updatedAt')
+                    if (!this.isNew && __classPrivateFieldGet(this, _schema).options.timestamps && key === '_updatedAt')
                         value = new Date();
                     value = pool.escape(value);
                     if (this.isNew) {
@@ -101,11 +98,11 @@ class Document {
                     query += ` ${updateString} WHERE _id = ${pool.escape(this['_id'])}`;
                 }
             };
-            if (__classPrivateFieldGet(this, _preSave))
-                __classPrivateFieldGet(this, _preSave).call(this, this, insert);
+            if (__classPrivateFieldGet(this, _schema).methods.save)
+                __classPrivateFieldGet(this, _schema).methods.save(this, insert);
             else
                 insert();
-            return __classPrivateFieldGet(this, _checkDb).call(this, () => {
+            return this.checkDb(() => {
                 return pool.execute(query)
                     .then(() => {
                     if (callback)
@@ -127,20 +124,20 @@ class Document {
         }
     }
     convertData({ doc }) {
-        const hasId = __classPrivateFieldGet(this, _options)._id === undefined || __classPrivateFieldGet(this, _options)._id ? true : false;
-        let keys = Object.keys(__classPrivateFieldGet(this, _schema));
+        const hasId = __classPrivateFieldGet(this, _schema).options._id === undefined || __classPrivateFieldGet(this, _schema).options._id ? true : false;
+        let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj);
         keys.forEach((key) => {
             if (this.isNew) {
                 let defaultValue = undefined, value = '';
-                if (typeof __classPrivateFieldGet(this, _schema)[key] !== 'string') {
-                    defaultValue = __classPrivateFieldGet(this, _schema)[key].default;
+                if (typeof __classPrivateFieldGet(this, _schema).obj[key] !== 'string') {
+                    defaultValue = __classPrivateFieldGet(this, _schema).obj[key].default;
                 }
                 if (doc[key])
                     value = doc[key];
                 else if (defaultValue)
                     value = defaultValue;
-                if (typeof __classPrivateFieldGet(this, _schema)[key] !== 'string') {
-                    let def = __classPrivateFieldGet(this, _schema)[key];
+                if (typeof __classPrivateFieldGet(this, _schema).obj[key] !== 'string') {
+                    let def = __classPrivateFieldGet(this, _schema).obj[key];
                     if (def.lowercase)
                         value = value.toLowerCase();
                     if (def.uppercase)
@@ -157,6 +154,15 @@ class Document {
             }
         });
     }
+    checkDb(next) {
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
+            .then(() => {
+            return next();
+        })
+            .catch((err) => {
+            throw err;
+        });
+    }
 }
-_preSave = new WeakMap(), _checkDb = new WeakMap(), _schema = new WeakMap(), _table = new WeakMap(), _options = new WeakMap(), _isNew = new WeakMap();
+_schema = new WeakMap(), _table = new WeakMap(), _isNew = new WeakMap();
 exports.default = Document;

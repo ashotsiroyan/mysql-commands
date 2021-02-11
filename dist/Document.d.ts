@@ -1,10 +1,7 @@
-import { SchemaDefinition, SchemaOptions } from './Schema';
+import Schema from './Schema';
 interface DocumentParams {
-    preSave: ((params: object, fn: () => void) => any) | undefined;
-    checkDb: (next: () => any) => any;
-    schema: SchemaDefinition;
+    schema: Schema;
     table: string;
-    options: SchemaOptions;
     isNew?: boolean;
     doc: object;
 }
@@ -18,6 +15,7 @@ declare class Document implements IDocument {
     #private;
     [name: string]: any;
     constructor(params: DocumentParams);
+    get schema(): Schema;
     get tableName(): string;
     get isNew(): boolean;
     remove(): Document | Promise<Document>;
@@ -25,5 +23,6 @@ declare class Document implements IDocument {
     save(): Document | Promise<Document>;
     save(callback: (err: any, res?: Document) => void): void;
     private convertData;
+    private checkDb;
 }
 export default Document;
