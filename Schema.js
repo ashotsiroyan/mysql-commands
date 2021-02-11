@@ -4,23 +4,18 @@ const dataTypes_1 = require("./plugins/dataTypes");
 class Schema {
     constructor(definition, options) {
         this.indexes = {};
-        this.definition = definition;
+        this.obj = definition;
         this.options = options;
         this.methods = {};
     }
-    get SchemaParams() {
-        return ({
-            sqlString: this.convertToString(),
-            definition: this.definition,
-            methods: this.methods,
-            options: this.options
-        });
+    get query() {
+        return this.convertToString();
     }
     pre(method, callBack) {
         this.methods[method] = callBack;
     }
     remove(field) {
-        delete this.definition[field];
+        delete this.obj[field];
     }
     index(fields) {
         const exists = (name) => {
@@ -34,7 +29,7 @@ class Schema {
             return is;
         };
         Object.keys(fields).forEach((key) => {
-            if (this.definition[key] !== undefined) {
+            if (this.obj[key] !== undefined) {
                 if (!exists(fields[key])) {
                     this.indexes[fields[key]] = [key];
                 }
@@ -48,11 +43,11 @@ class Schema {
         const hasId = this.options._id === undefined || this.options._id ? true : false;
         let mysql = "", indexSql = "";
         if (hasId)
-            this.definition = Object.assign({ _id: { type: 'VARCHAR', size: 24, primaryKey: true } }, this.definition);
+            this.obj = Object.assign({ _id: { type: 'VARCHAR', size: 24, primaryKey: true } }, this.obj);
         if (this.options.timestamps)
-            this.definition = Object.assign(Object.assign({}, this.definition), { _createdAt: { type: 'DATE', default: new Date() }, _updatedAt: { type: 'DATE', default: new Date() } });
-        Object.keys(this.definition).forEach((field, i) => {
-            let option = this.definition[field];
+            this.obj = Object.assign(Object.assign({}, this.obj), { _createdAt: { type: 'DATE', default: new Date() }, _updatedAt: { type: 'DATE', default: new Date() } });
+        Object.keys(this.obj).forEach((field, i) => {
+            let option = this.obj[field];
             mysql += `${field} `;
             if (typeof option !== 'string') {
                 let size = "";
@@ -87,13 +82,13 @@ class Schema {
             else {
                 mysql += `${option}${dataTypes_1.dataTypesOptions[option].default ? "(" + dataTypes_1.dataTypesOptions[option].default + ")" : ""} NOT NULL`;
             }
-            if (i !== Object.keys(this.definition).length - 1)
+            if (i !== Object.keys(this.obj).length - 1)
                 mysql += ", ";
         });
         Object.keys(this.indexes).forEach((index, i) => {
             indexSql += `INDEX ${index} (`;
             this.indexes[index].forEach((field, j) => {
-                if (this.definition[field])
+                if (this.obj[field])
                     indexSql += `${field}${j !== this.indexes[index].length - 1 ? ', ' : ''}`;
             });
             indexSql += `)${i !== Object.keys(this.indexes).length - 1 ? ', ' : ''}`;

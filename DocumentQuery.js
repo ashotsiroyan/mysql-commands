@@ -13,7 +13,6 @@ class DocumentQuery {
         this.sortQuery = "";
         this.limitQuery = "";
         this.mainQuery = query;
-        this.checkDb = docProps.checkDb;
         this.docProps = docProps;
         this.fnName = fnName;
     }
@@ -75,6 +74,15 @@ class DocumentQuery {
             else
                 throw err;
         }
+    }
+    checkDb(next) {
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
+            .then(() => {
+            return next();
+        })
+            .catch((err) => {
+            throw err;
+        });
     }
 }
 exports.default = DocumentQuery;

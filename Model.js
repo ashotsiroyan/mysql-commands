@@ -65,20 +65,11 @@ function getFileds(arg) {
 }
 class Model {
     constructor(table, Schema) {
-        let params;
-        params = Schema.SchemaParams;
-        this.mysqlStructure = params.sqlString;
-        this.methods = params.methods;
+        this.schema = Schema;
         this.docProps = {
-            schema: params.definition,
-            options: params.options,
-            preSave: this.methods['save'],
-            checkDb: this.checkDb.bind(this),
+            schema: this.schema,
             table: table
         };
-    }
-    get schema() {
-        return this.docProps.schema;
     }
     get tableName() {
         return this.docProps.table;
@@ -128,7 +119,7 @@ class Model {
     }
     insertOne(params = {}, callback) {
         try {
-            const document = new Document_1.default(Object.assign(Object.assign({ doc: params }, this.docProps), { isNew: true }));
+            const document = this.new(params);
             if (callback)
                 document.save(callback);
             else
@@ -144,10 +135,10 @@ class Model {
     insertMany(params = [], callback) {
         try {
             let query = "INSERT INTO " + this.tableName, docs = params.map((doc) => {
-                return new Document_1.default(Object.assign(Object.assign({ doc }, this.docProps), { isNew: true }));
+                return this.new(doc);
             });
             const insert = () => {
-                let keys = Object.keys(this.schema), values = "", cols = "";
+                let keys = Object.keys(this.schema.obj), values = "", cols = "";
                 docs.forEach((row, i) => {
                     keys.forEach((key, j) => {
                         let value = pool.escape(row[key]);
@@ -158,12 +149,11 @@ class Model {
                 });
                 query += ` (${cols}) VALUES ${values}`;
             };
-            if (this.methods.save !== undefined) {
+            if (this.schema.methods.save) {
                 docs.forEach((doc, i) => {
-                    if (this.methods.save !== undefined) {
-                        this.methods.save(doc, () => { if (i === docs.length - 1)
+                    if (this.schema.methods.save)
+                        this.schema.methods.save(doc, () => { if (i === docs.length - 1)
                             insert(); });
-                    }
                 });
             }
             else
@@ -195,10 +185,10 @@ class Model {
                 let query = `UPDATE ${this.tableName} SET`;
                 const insert = () => {
                     let updateString = "";
-                    Object.keys(this.schema).forEach((key) => {
+                    Object.keys(this.schema.obj).forEach((key) => {
                         if (key !== '_id' && key !== 'id') {
                             let value = update[key];
-                            if (this.docProps.options.timestamps && key === '_updatedAt')
+                            if (this.schema.options.timestamps && key === '_updatedAt')
                                 value = new Date();
                             if (value) {
                                 value = pool.escape(value);
@@ -210,8 +200,8 @@ class Model {
                         updateString = updateString.slice(0, -2);
                     query += ` ${updateString} ${filterFileds}`;
                 };
-                if (this.methods.update)
-                    this.methods.update(update, insert);
+                if (this.schema.methods.update)
+                    this.schema.methods.update(update, insert);
                 else
                     insert();
                 return this.checkDb(() => {
@@ -245,10 +235,10 @@ class Model {
                 let query = `UPDATE ${this.tableName} SET`;
                 const insert = () => {
                     let updateString = "";
-                    Object.keys(this.schema).forEach((key) => {
+                    Object.keys(this.schema.obj).forEach((key) => {
                         if (key !== '_id' && key !== 'id') {
                             let value = update[key];
-                            if (this.docProps.options.timestamps && key === '_updatedAt')
+                            if (this.schema.options.timestamps && key === '_updatedAt')
                                 value = new Date();
                             if (value) {
                                 value = pool.escape(value);
@@ -260,8 +250,8 @@ class Model {
                         updateString = updateString.slice(0, -2);
                     query += ` ${updateString} WHERE _id = ${pool.escape(id)}`;
                 };
-                if (this.methods.update)
-                    this.methods.update(update, insert);
+                if (this.schema.methods.update)
+                    this.schema.methods.update(update, insert);
                 else
                     insert();
                 return this.checkDb(() => {
@@ -365,7 +355,7 @@ class Model {
         }
     }
     checkDb(next) {
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.mysqlStructure})`)
+        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
             .then(() => {
             return next();
         })

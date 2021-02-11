@@ -1,11 +1,5 @@
 import { dataTypes } from './plugins/dataTypes';
 import Document from './Document';
-export interface returnParams {
-    sqlString: string;
-    definition: SchemaDefinition;
-    methods: SchemaMethods;
-    options: SchemaOptions;
-}
 declare type SchemaDefinitionParams = {
     type?: dataTypes;
     default?: any;
@@ -23,11 +17,11 @@ declare type SchemaDefinitionParams = {
 interface SchemaIndex {
     [field: string]: string;
 }
-export interface SchemaOptions {
+interface SchemaOptions {
     _id?: boolean;
     timestamps?: boolean;
 }
-export interface SchemaMethods {
+interface SchemaMethods {
     save?: (params: any, next: () => void) => void;
     update?: (params: any, next: () => void) => void;
 }
@@ -36,16 +30,11 @@ export interface SchemaDefinition {
 }
 declare class Schema {
     private indexes;
-    private options;
-    private definition;
-    private methods;
+    readonly options: SchemaOptions;
+    obj: SchemaDefinition;
+    readonly methods: SchemaMethods;
+    get query(): string;
     constructor(definition: SchemaDefinition, options: SchemaOptions);
-    get SchemaParams(): {
-        sqlString: string;
-        definition: SchemaDefinition;
-        methods: SchemaMethods;
-        options: SchemaOptions;
-    };
     pre(method: 'save' | 'update', callBack: (params: Document, next: () => void) => void): void;
     remove(field: string): void;
     index(fields: SchemaIndex): void;
