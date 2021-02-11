@@ -1,7 +1,7 @@
 import { SchemaDefinition, SchemaOptions } from './Schema';
 interface DocumentParams {
     preSave: ((params: object, fn: () => void) => any) | undefined;
-    checkDb: (next: () => any) => any;
+    dbQuery: (next: (db: any) => any) => any;
     schema: SchemaDefinition;
     table: string;
     options: SchemaOptions;

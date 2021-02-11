@@ -1,6 +1,7 @@
 import Document from './Document';
 import DocumentQuery from './DocumentQuery';
 import Schema, { SchemaDefinition, SchemaOptions } from './Schema';
+import Connection from './Connection';
 declare type QuerySelector = {
     $eq?: any;
     $gt?: any;
@@ -22,7 +23,7 @@ export interface DocProps {
     schema: SchemaDefinition;
     options: SchemaOptions;
     preSave: ((params: any, next: () => void) => void) | undefined;
-    checkDb(next: () => any): any;
+    dbQuery(next: (db: any) => any): any;
     table: string;
 }
 interface IModel {
@@ -52,7 +53,9 @@ declare class Model implements IModel {
     private mysqlStructure;
     private methods;
     private docProps;
+    connection: () => Connection;
     constructor(table: string, Schema: Schema);
+    constructor(table: string, Schema: Schema, connection: () => Connection);
     get schema(): SchemaDefinition;
     get tableName(): string;
     new(doc?: any): Document;
@@ -78,6 +81,6 @@ declare class Model implements IModel {
     findByIdAndDelete(id: string, callback: (err: any, res?: Document) => void): void;
     countDocuments(conditions?: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
-    private checkDb;
+    private dbQuery;
 }
 export default Model;

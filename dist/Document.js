@@ -15,21 +15,20 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _preSave, _checkDb, _schema, _table, _options, _isNew;
+var _preSave, _dbQuery, _schema, _table, _options, _isNew;
 Object.defineProperty(exports, "__esModule", { value: true });
 const mysql_1 = __importDefault(require("./mysql"));
 const ObjectId_1 = __importDefault(require("./plugins/ObjectId"));
-const pool = mysql_1.default.pool;
 class Document {
     constructor(params) {
         _preSave.set(this, void 0);
-        _checkDb.set(this, void 0);
+        _dbQuery.set(this, void 0);
         _schema.set(this, void 0);
         _table.set(this, void 0);
         _options.set(this, void 0);
         _isNew.set(this, void 0);
         __classPrivateFieldSet(this, _preSave, params.preSave);
-        __classPrivateFieldSet(this, _checkDb, params.checkDb);
+        __classPrivateFieldSet(this, _dbQuery, params.dbQuery);
         __classPrivateFieldSet(this, _schema, params.schema);
         __classPrivateFieldSet(this, _options, params.options);
         __classPrivateFieldSet(this, _table, params.table);
@@ -45,9 +44,9 @@ class Document {
     remove(callback) {
         try {
             if (this['_id']) {
-                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
-                return __classPrivateFieldGet(this, _checkDb).call(this, () => {
-                    return pool.execute(query)
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${mysql_1.default.escape(this['_id'])}`;
+                return __classPrivateFieldGet(this, _dbQuery).call(this, (db) => {
+                    return db.execute(query)
                         .then(() => {
                         if (callback)
                             callback(null, this);
@@ -79,7 +78,7 @@ class Document {
                     let value = this[key];
                     if (!this.isNew && __classPrivateFieldGet(this, _options).timestamps && key === '_updatedAt')
                         value = new Date();
-                    value = pool.escape(value);
+                    value = mysql_1.default.escape(value);
                     if (this.isNew) {
                         cols += `${key}, `;
                         values += `${value}, `;
@@ -98,15 +97,15 @@ class Document {
                 else {
                     if (updateString.slice(-2) === ', ')
                         updateString = updateString.slice(0, -2);
-                    query += ` ${updateString} WHERE _id = ${pool.escape(this['_id'])}`;
+                    query += ` ${updateString} WHERE _id = ${mysql_1.default.escape(this['_id'])}`;
                 }
             };
             if (__classPrivateFieldGet(this, _preSave))
                 __classPrivateFieldGet(this, _preSave).call(this, this, insert);
             else
                 insert();
-            return __classPrivateFieldGet(this, _checkDb).call(this, () => {
-                return pool.execute(query)
+            return __classPrivateFieldGet(this, _dbQuery).call(this, (db) => {
+                return db.execute(query)
                     .then(() => {
                     if (callback)
                         callback(null, this);
@@ -158,5 +157,5 @@ class Document {
         });
     }
 }
-_preSave = new WeakMap(), _checkDb = new WeakMap(), _schema = new WeakMap(), _table = new WeakMap(), _options = new WeakMap(), _isNew = new WeakMap();
+_preSave = new WeakMap(), _dbQuery = new WeakMap(), _schema = new WeakMap(), _table = new WeakMap(), _options = new WeakMap(), _isNew = new WeakMap();
 exports.default = Document;

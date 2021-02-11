@@ -3,11 +3,10 @@ import ObjectId from './plugins/ObjectId';
 
 import {SchemaDefinition, SchemaOptions} from './Schema';
 
-const pool = mysql.pool;
 
 interface DocumentParams{
     preSave: ((params: object, fn:()=>void)=>any) | undefined;
-    checkDb: (next:()=>any)=>any;
+    dbQuery: (next:(db: any)=>any)=>any;
     schema: SchemaDefinition;
     table: string;
     options: SchemaOptions;
@@ -25,7 +24,7 @@ interface IDocument{
 
 class Document implements IDocument{
     #preSave: ((params: object, fn:()=>void)=>any) | undefined;
-    #checkDb: (next:()=>any)=>any;
+    #dbQuery: (next:(db: any)=>any)=>any;
     #schema: SchemaDefinition;
     #table: string;
     #options: SchemaOptions;
@@ -33,7 +32,7 @@ class Document implements IDocument{
     [name: string]: any;
     constructor(params: DocumentParams){
         this.#preSave = params.preSave;
-        this.#checkDb = params.checkDb;
+        this.#dbQuery = params.dbQuery;
         this.#schema = params.schema;
         this.#options = params.options;
         this.#table = params.table;
@@ -54,10 +53,10 @@ class Document implements IDocument{
     remove(callback?: (err: any, res?: Document)=> void){
         try{
             if(this['_id']){
-                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${mysql.escape(this['_id'])}`;
                 
-                return this.#checkDb(()=>{
-                    return pool.execute(query)
+                return this.#dbQuery((db: any)=>{
+                    return db.execute(query)
                         .then(()=>{
                             if(callback)
                                 callback(null, this);
@@ -97,7 +96,7 @@ class Document implements IDocument{
                     if(!this.isNew && this.#options.timestamps && key === '_updatedAt')
                         value = new Date();
 
-                    value = pool.escape(value);
+                    value = mysql.escape(value);
     
                     if(this.isNew){
                         cols += `${key}, `;
@@ -119,7 +118,7 @@ class Document implements IDocument{
                     if(updateString.slice(-2) === ', ')
                         updateString = updateString.slice(0, -2);
 
-                    query += ` ${updateString} WHERE _id = ${pool.escape(this['_id'])}`;
+                    query += ` ${updateString} WHERE _id = ${mysql.escape(this['_id'])}`;
                 }
             }
 
@@ -129,8 +128,8 @@ class Document implements IDocument{
             else
                 insert();
 
-            return this.#checkDb(()=>{
-                return pool.execute(query)
+            return this.#dbQuery((db: any)=>{
+                return db.execute(query)
                     .then(()=>{
                         if(callback)
                             callback(null, this as Document);

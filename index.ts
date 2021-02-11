@@ -3,23 +3,36 @@ import Model from './Model';
 import Schema from './Schema';
 
 
-
 async function connect(params: connectionParams){
     try{
-        await mysql.connect(params);
+        return await mysql.connect(params);
+    }catch(err) {
+        throw err;
+    }
+}
 
-        return true;
+async function createConnection(params: connectionParams){
+    try{
+        return await mysql.createConnection(params);
     }catch(err) {
         throw err;
     }
 }
 
 function model(table: string, Schema: Schema){
-    return new Model(table, Schema);
+    let model = new Model(table, Schema);
+
+    return model;
 }
+
+const connection = mysql.connection;
+const connections = mysql.connections;
 
 export {
     connect,
+    createConnection,
     Schema,
-    model
+    model,
+    connection,
+    connections
 }

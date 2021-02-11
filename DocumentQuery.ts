@@ -1,8 +1,5 @@
-import mysql from './mysql';
 import Document from './Document';
 import {DocProps} from './Model';
-
-const pool = mysql.pool;
 
 type SortType = {
     [field: string]: -1 | 1
@@ -15,10 +12,10 @@ class DocumentQuery{
     private limitQuery: string = "";
     private docProps: DocProps;
     private fnName: string;
-    private checkDb: ( next: ()=> any )=> any;
+    private dbQuery: ( next: (db: any)=> any )=> any;
     constructor(query: string, docProps: DocProps, fnName: string){
         this.mainQuery = query;
-        this.checkDb = docProps.checkDb;
+        this.dbQuery = docProps.dbQuery;
         this.docProps = docProps;
         this.fnName = fnName;
     }
@@ -58,8 +55,8 @@ class DocumentQuery{
         try{
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
-            return this.checkDb(()=>{
-                return pool.execute(query)
+            return this.dbQuery((db: any)=>{
+                return db.execute(query)
                     .then(([rows]: any[])=>{
                         mainQuery = "";
                         limitQuery = "";

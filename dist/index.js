@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.model = exports.Schema = exports.connect = void 0;
+exports.connections = exports.connection = exports.model = exports.Schema = exports.createConnection = exports.connect = void 0;
 const mysql_1 = __importDefault(require("./mysql"));
 const Model_1 = __importDefault(require("./Model"));
 const Schema_1 = __importDefault(require("./Schema"));
@@ -20,8 +20,7 @@ exports.Schema = Schema_1.default;
 function connect(params) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield mysql_1.default.connect(params);
-            return true;
+            return yield mysql_1.default.connect(params);
         }
         catch (err) {
             throw err;
@@ -29,7 +28,23 @@ function connect(params) {
     });
 }
 exports.connect = connect;
+function createConnection(params) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            return yield mysql_1.default.createConnection(params);
+        }
+        catch (err) {
+            throw err;
+        }
+    });
+}
+exports.createConnection = createConnection;
 function model(table, Schema) {
-    return new Model_1.default(table, Schema);
+    let model = new Model_1.default(table, Schema);
+    return model;
 }
 exports.model = model;
+const connection = mysql_1.default.connection;
+exports.connection = connection;
+const connections = mysql_1.default.connections;
+exports.connections = connections;

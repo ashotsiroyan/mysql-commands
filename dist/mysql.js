@@ -4,30 +4,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const promise_1 = __importDefault(require("mysql2/promise"));
+const Connection_1 = __importDefault(require("./Connection"));
 var Singleton = (function () {
-    var instance;
+    var connection, connections = [];
     return {
-        pool: {
-            execute: (sql, values) => { if (instance)
-                return instance.execute(sql, values);
-            else
-                throw "Isn't connected to database."; },
-            query: (sql, values) => { if (instance)
-                return instance.query(sql, values);
-            else
-                throw "Isn't connected to database."; },
-            escape: (value) => promise_1.default.escape(value),
-            format: (sql, values) => promise_1.default.format(sql, values)
+        connection: function () {
+            return connection;
+        },
+        connections: function () {
+            return connections;
         },
         connect: function (props) {
             try {
-                instance = promise_1.default.createPool(props);
-                return true;
+                connection = new Connection_1.default(promise_1.default.createPool(props), props.database);
+                connections.push(connection);
+                return connection;
             }
             catch (err) {
                 throw err;
             }
-        }
+        },
+        createConnection: function (props) {
+            try {
+                let _connection = new Connection_1.default(promise_1.default.createPool(props), props.database);
+                connections.push(_connection);
+                return _connection;
+            }
+            catch (err) {
+                throw err;
+            }
+        },
+        escape: (value) => promise_1.default.escape(value),
+        format: (sql, values) => promise_1.default.format(sql, values)
     };
 })();
 exports.default = Singleton;

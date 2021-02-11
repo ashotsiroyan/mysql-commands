@@ -1,13 +1,13 @@
 import mysql from 'mysql2/promise';
+import Connection from './Connection';
 
 interface ISingleton {
-    pool: {
-        execute: (sql: string, values?: any) => any;
-        query: (sql: string, values?: any) => any;
-        escape: (value: string) => any;
-        format: (sql: string, values?: any) => any;
-    };
-    connect: (props: any) => boolean | undefined;
+    connection(): Connection;
+    connections(): Connection[];
+    connect: (props: any) => Connection;
+    createConnection: (props: any) => Connection;
+    escape(value: string): string;
+    format(sql: string, values?: any): string;
 }
 
 export type connectionParams = {
@@ -18,24 +18,38 @@ export type connectionParams = {
 }
 
 var Singleton: ISingleton = (function() {
-    var instance: any;
+    var connection: Connection,
+        connections: Connection[] = [];
 
     return {
-        pool: {
-            execute: (sql: string, values?: any) => {if(instance) return instance.execute(sql, values); else throw "Isn't connected to database.";},
-            query: (sql: string, values?: any) => {if(instance) return instance.query(sql, values); else throw "Isn't connected to database.";},
-            escape: (value: string) => mysql.escape(value),
-            format: (sql: string, values?: any) => mysql.format(sql, values)
+        connection: function () {
+            return connection;
+        },
+        connections: function () {
+            return connections;
         },
         connect: function (props: connectionParams) {
             try{
-                instance = mysql.createPool(props);
+                connection = new Connection(mysql.createPool(props), props.database);
+                connections.push(connection);
 
-                return true;
+                return connection;
             }catch(err){
                 throw err;
             }
-        }
+        },
+        createConnection: function (props: connectionParams) {
+            try{
+                let _connection = new Connection(mysql.createPool(props), props.database);
+                connections.push(_connection);
+
+                return _connection;
+            }catch(err){
+                throw err;
+            }
+        },
+        escape: (value: string) => mysql.escape(value),
+        format: (sql: string, values?: any) => mysql.format(sql, values)
     };
 })();
 

@@ -3,9 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mysql_1 = __importDefault(require("./mysql"));
 const Document_1 = __importDefault(require("./Document"));
-const pool = mysql_1.default.pool;
 class DocumentQuery {
     constructor(query, docProps, fnName) {
         this.mainQuery = "";
@@ -13,7 +11,7 @@ class DocumentQuery {
         this.sortQuery = "";
         this.limitQuery = "";
         this.mainQuery = query;
-        this.checkDb = docProps.checkDb;
+        this.dbQuery = docProps.dbQuery;
         this.docProps = docProps;
         this.fnName = fnName;
     }
@@ -43,8 +41,8 @@ class DocumentQuery {
         let { mainQuery, limitQuery, sortQuery, skipQuery } = this;
         try {
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== '' ? skipQuery : '');
-            return this.checkDb(() => {
-                return pool.execute(query)
+            return this.dbQuery((db) => {
+                return db.execute(query)
                     .then(([rows]) => {
                     mainQuery = "";
                     limitQuery = "";

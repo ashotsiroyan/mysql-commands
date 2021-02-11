@@ -10,7 +10,7 @@ declare class DocumentQuery {
     private limitQuery;
     private docProps;
     private fnName;
-    private checkDb;
+    private dbQuery;
     constructor(query: string, docProps: DocProps, fnName: string);
     limit(val: number | string): this;
     skip(val: number | string): this;

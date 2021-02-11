@@ -1,11 +1,11 @@
+import Connection from './Connection';
 interface ISingleton {
-    pool: {
-        execute: (sql: string, values?: any) => any;
-        query: (sql: string, values?: any) => any;
-        escape: (value: string) => any;
-        format: (sql: string, values?: any) => any;
-    };
-    connect: (props: any) => boolean | undefined;
+    connection(): Connection;
+    connections(): Connection[];
+    connect: (props: any) => Connection;
+    createConnection: (props: any) => Connection;
+    escape(value: string): string;
+    format(sql: string, values?: any): string;
 }
 export declare type connectionParams = {
     host: string;
