@@ -22,14 +22,14 @@ export interface DocProps {
     schema: Schema;
     table: string;
 }
-interface IModel {
+interface IModel<T extends Document> {
     new: (doc?: any) => Document;
-    find(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery;
-    find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document[]) => void): DocumentQuery;
-    findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document) => void): DocumentQuery;
-    findById(id: string, fields?: string[]): DocumentQuery;
-    findById(id: string, fields: string[], callback: (err: any, res?: Document) => void): DocumentQuery;
+    find(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T[], T>;
+    find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;
+    findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
+    findById(id: string, fields?: string[]): DocumentQuery<T | null, T>;
+    findById(id: string, fields: string[], callback: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
     insertOne(params: object): Promise<Document>;
     insertOne(params: object, callback: (err: any, res?: Document) => void): void;
     insertMany(params: object[]): Promise<Document[]>;
@@ -45,20 +45,20 @@ interface IModel {
     countDocuments(conditions: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
 }
-declare class Model implements IModel {
+declare class Model<T extends Document> implements IModel<T> {
     private docProps;
     readonly schema: Schema;
     constructor(table: string, Schema: Schema);
     get tableName(): string;
     new(doc?: any): Document;
-    find(callback?: (err: any, res?: Document[]) => void): DocumentQuery;
-    find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document[]) => void): DocumentQuery;
-    find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document[]) => void): DocumentQuery;
-    findOne(callback?: (err: any, res?: Document) => void): DocumentQuery;
-    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document) => void): DocumentQuery;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document) => void): DocumentQuery;
-    findById(id: string, callback?: (err: any, res?: Document) => void): DocumentQuery;
-    findById(id: string, fields?: string[], callback?: (err: any, res?: Document) => void): DocumentQuery;
+    find(callback?: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;
+    find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;
+    find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;
+    findOne(callback?: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
+    findById(id: string, callback?: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
+    findById(id: string, fields?: string[], callback?: (err: any, res?: Document) => void): DocumentQuery<T | null, T>;
     insertOne(params: object): Promise<Document>;
     insertOne(params: object, callback: (err: any, res?: Document) => void): void;
     insertMany(params: object[]): Promise<Document[]>;
