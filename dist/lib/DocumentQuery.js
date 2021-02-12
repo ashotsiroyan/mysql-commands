@@ -49,11 +49,14 @@ class DocumentQuery {
                     limitQuery = "";
                     sortQuery = "";
                     skipQuery = "";
-                    let res = rows.map((row) => {
+                    rows = rows.map((row) => {
                         return new Document_1.default(Object.assign({ doc: row }, this.docProps));
                     });
-                    if (this.fnName === 'findOne' || this.fnName === 'findById')
-                        res = res[0];
+                    let res;
+                    if (this.fnName === 'find')
+                        res = rows;
+                    else
+                        res = rows[0] ? rows[0] : null;
                     if (callback)
                         callback(null, res);
                     else

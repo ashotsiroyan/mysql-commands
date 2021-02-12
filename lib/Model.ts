@@ -95,17 +95,17 @@ export interface DocProps{
     table: string;
 }
 
-interface IModel{
+interface IModel<T extends Document>{
     new: (doc?: any)=> Document;
 
-    find(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery;
-    find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document[])=>void): DocumentQuery;
+    find(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T[], T>;
+    find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document[])=>void): DocumentQuery<T[], T>;
 
-    findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document)=>void): DocumentQuery;
+    findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>;
 
-    findById(id: string, fields?: string[]): DocumentQuery;
-    findById(id: string, fields: string[], callback: (err: any, res?: Document)=>void): DocumentQuery;
+    findById(id: string, fields?: string[]): DocumentQuery<T | null, T>;
+    findById(id: string, fields: string[], callback: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>;
 
     insertOne(params: object): Promise<Document>;
     insertOne(params: object, callback: (err: any, res?: Document)=>void): void;
@@ -129,7 +129,7 @@ interface IModel{
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number)=>void): void;
 }
 
-class Model implements IModel{
+class Model<T extends Document> implements IModel<T>{
     private docProps: DocProps;
     public readonly schema: Schema;
 
@@ -154,9 +154,9 @@ class Model implements IModel{
         });
     }
 
-    find(callback?: (err: any, res?: Document[])=>void): DocumentQuery
-    find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document[])=>void): DocumentQuery
-    find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document[])=>void): DocumentQuery
+    find(callback?: (err: any, res?: Document[])=>void): DocumentQuery<T[], T>
+    find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document[])=>void): DocumentQuery<T[], T>
+    find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document[])=>void): DocumentQuery<T[], T>
     find(conditions?: any, fields?: any, callback?: any){
         if (typeof conditions === 'function') {
             callback = conditions;
@@ -167,7 +167,7 @@ class Model implements IModel{
             fields = null;
         }
 
-        const query = new DocumentQuery(`SELECT ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`, this.docProps, 'find');
+        const query = new DocumentQuery<T[], T>(`SELECT ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)}`, this.docProps, 'find');
 
         if(callback)
             query.exec(callback);
@@ -175,9 +175,9 @@ class Model implements IModel{
         return query;
     }
 
-    findOne(callback?: (err: any, res?: Document)=>void): DocumentQuery
-    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document)=>void): DocumentQuery
-    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document)=>void): DocumentQuery
+    findOne(callback?: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>
+    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>
+    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>
     findOne(conditions?: any, fields?: any, callback?: any){
         if (typeof conditions === 'function') {
             callback = conditions;
@@ -188,7 +188,7 @@ class Model implements IModel{
             fields = null;
         }
 
-        const query = new DocumentQuery(`SELECT ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`, this.docProps, 'findOne');
+        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.tableName} ${getConditions(conditions)} LIMIT 1`, this.docProps, 'findOne');
 
         if(callback)
             query.exec(callback);
@@ -196,15 +196,15 @@ class Model implements IModel{
         return query;
     }
 
-    findById(id: string, callback?: (err: any, res?: Document)=>void): DocumentQuery
-    findById(id: string, fields?: string[], callback?: (err: any, res?: Document)=>void): DocumentQuery
+    findById(id: string, callback?: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>
+    findById(id: string, fields?: string[], callback?: (err: any, res?: Document)=>void): DocumentQuery<T | null, T>
     findById(id: any, fields?: any, callback?: any){
         if (typeof fields === 'function') {
             callback = fields;
             fields = null;
         }
 
-        const query = new DocumentQuery(`SELECT ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`, this.docProps, 'findById');
+        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`, this.docProps, 'findById');
 
         if(callback)
             query.exec(callback);

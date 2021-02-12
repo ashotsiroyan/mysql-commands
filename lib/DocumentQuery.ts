@@ -10,7 +10,7 @@ type SortType = {
 
 type FunName = 'find' | 'findOne' | 'findById';
 
-class DocumentQuery{
+class DocumentQuery<T, DocType extends Document>{
     private mainQuery: string = "";
     private skipQuery: string = "";
     private sortQuery: any = "";
@@ -53,9 +53,9 @@ class DocumentQuery{
         return this;
     }
 
-    exec(): Promise<Document>
-    exec(callback: (err: any, res?: Document)=>void): void
-    exec(callback?: (err: any, res?: Document)=>void){
+    exec(): Promise<T>
+    exec(callback: (err: any, res?: T)=>void): void
+    exec(callback?: (err: any, res?: T)=>void){
         let {mainQuery, limitQuery, sortQuery, skipQuery} = this;
 
         try{
@@ -69,15 +69,19 @@ class DocumentQuery{
                         sortQuery = "";
                         skipQuery = "";
 
-                        let res: Document = rows.map((row: any[])=>{
+                        rows = rows.map((row: any)=>{
                             return new Document({
                                 doc: row,
                                 ...this.docProps
                             });
                         });
 
-                        if(this.fnName === 'findOne' || this.fnName === 'findById')
-                            res = res[0];
+                        let res: T;
+
+                        if(this.fnName === 'find')
+                            res = rows;
+                        else
+                            res = rows[0]?rows[0]:null
 
                         if(callback)
                             callback(null, res);

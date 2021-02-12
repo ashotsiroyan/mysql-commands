@@ -1,6 +1,7 @@
 import mysql, {connectionParams} from './mysql';
 import Model from './Model';
 import Schema from './Schema';
+import Document from './Document';
 
 
 async function connect(params: connectionParams){
@@ -13,8 +14,8 @@ async function connect(params: connectionParams){
     }
 }
 
-function model(table: string, Schema: Schema){
-    return new Model(table, Schema);
+function model<T extends Document>(table: string, Schema: Schema){
+    return new Model<T>(table, Schema);
 }
 
 export {
