@@ -18,10 +18,10 @@ declare class Document implements IDocument {
     get schema(): Schema;
     get tableName(): string;
     get isNew(): boolean;
-    remove(): Document | Promise<Document>;
-    remove(callback: (err: any, res?: Document) => void): void;
     save(): Document | Promise<Document>;
     save(callback: (err: any, res?: Document) => void): void;
+    remove(): Document | Promise<Document>;
+    remove(callback: (err: any, res?: Document) => void): void;
     private convertData;
     private checkDb;
 }

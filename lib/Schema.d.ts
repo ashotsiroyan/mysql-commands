@@ -24,6 +24,8 @@ interface SchemaOptions {
 interface SchemaMethods {
     save?: (params: any, next: () => void) => void;
     update?: (params: any, next: () => void) => void;
+    delete?: (params: any, next: () => void) => void;
+    remove?: (params: any, next: () => void) => void;
 }
 export interface SchemaDefinition {
     [filed: string]: SchemaDefinitionParams | dataTypes;

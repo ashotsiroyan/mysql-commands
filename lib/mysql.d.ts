@@ -1,17 +1,12 @@
+import mysql from 'mysql2/promise';
+import Connection from './Connection';
 interface ISingleton {
-    pool: {
-        execute: (sql: string, values?: any) => any;
-        query: (sql: string, values?: any) => any;
-        escape: (value: string) => any;
-        format: (sql: string, values?: any) => any;
-    };
-    connect: (props: any) => boolean | undefined;
+    connection(): Connection;
+    connect: (props: any) => Connection;
+    escape: (value: string) => any;
+    format: (sql: string, values?: any) => any;
+    execute: (sql: string, db?: mysql.Pool) => any;
+    query: (sql: string, db?: mysql.Pool) => any;
 }
-export declare type connectionParams = {
-    host: string;
-    user: string;
-    password: string;
-    database: string;
-};
 declare var Singleton: ISingleton;
 export default Singleton;
