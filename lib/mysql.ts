@@ -3,8 +3,10 @@ import Connection, {ConnectionParams} from './Connection';
 
 
 interface ISingleton {
-    connection(): Connection;
+    connection: Connection;
+    connections: Connection[];
     connect: (props: any) => Connection;
+    createConnection: (props: any) => Connection;
     escape: (value: string) => any;
     format: (sql: string, values?: any) => any;
     execute: (sql: string, db?: mysql.Pool) => any;
@@ -12,20 +14,27 @@ interface ISingleton {
 }
 
 var Singleton: ISingleton = (function() {
-    var connection: Connection;
+    var connection: Connection = new Connection(),
+        connections: Connection[] = [connection];
 
     return {
-        connection: function () {
-            return connection;
-        },
-        connect: function (props: ConnectionParams) {
+        connection,
+        connections,
+        connect: function (props: ConnectionParams) { //without async/await, may cause a problem
             try{
-                if(!connection)
-                    connection = new Connection(props);
-                else
-                    connection.useDb(props);
+                connection.useDb(props);
     
                 return connection;
+            }catch(err){
+                throw err;
+            }
+        },
+        createConnection: function (props: ConnectionParams) {
+            try{
+                let _conn = new Connection(props);
+                connections.push(_conn);
+    
+                return _conn;
             }catch(err){
                 throw err;
             }

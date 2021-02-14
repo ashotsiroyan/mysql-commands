@@ -63,7 +63,7 @@ class DocumentQuery<T, DocType extends Document>{
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
             return this.checkDb(()=>{
-                return mysql.execute(query)
+                return mysql.execute(query, this.docProps.db.db)
                     .then(([rows]: any[])=>{
                         mainQuery = "";
                         limitQuery = "";

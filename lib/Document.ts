@@ -1,3 +1,4 @@
+import Connection from './Connection';
 import mysql from './mysql';
 import ObjectId from './plugins/ObjectId';
 
@@ -5,6 +6,7 @@ import Schema, {SchemaDefinition} from './Schema';
 
 interface DocumentParams{
     schema: Schema;
+    db: Connection;
     table: string;
     isNew?: boolean;
     doc: object;
@@ -20,6 +22,7 @@ interface IDocument{
 
 class Document implements IDocument{
     #schema: Schema;
+    #db: Connection;
     #table: string;
     #isNew: boolean;
     [name: string]: any;
@@ -27,6 +30,7 @@ class Document implements IDocument{
     constructor(params: DocumentParams){
         this.#schema = params.schema;
         this.#table = params.table;
+        this.#db = params.db;
         this.#isNew = params.isNew || false;
 
         this.convertData({doc: params.doc});
@@ -95,7 +99,7 @@ class Document implements IDocument{
                 saveNext();
 
             return this.checkDb(()=>{
-                return mysql.execute(query)
+                return mysql.execute(query, this.#db.db)
                     .then(()=>{
                         if(callback)
                             callback(null, this as Document);
@@ -131,7 +135,7 @@ class Document implements IDocument{
                     removeNext();
 
                 return this.checkDb(()=>{
-                    return mysql.execute(query)
+                    return mysql.execute(query, this.#db.db)
                         .then(()=>{
                             if(callback)
                                 callback(null, this);
@@ -160,7 +164,7 @@ class Document implements IDocument{
         keys.forEach((key)=>{
             if(this.isNew){
                 let defaultValue = undefined,
-                    value:any = '';
+                    value: any = '';
 
                 if(typeof this.#schema.obj[key] !== 'string'){
                     defaultValue = (this.#schema.obj[key] as SchemaDefinition).default;

@@ -1,21 +1,25 @@
 import mysql from './mysql';
-import Model from './Model';
 import Schema from './Schema';
-import Document from './Document';
-import {ConnectionParams} from './Connection';
 
 
 /**
  * Opens the default mysql commands connection.
- * @returns pseudo-promise wrapper around this
+ * @param params MySQL connection params
+ * @returns the default Connection object
  */
-async function connect(params: ConnectionParams){
-    try{
-        return await mysql.connect(params);
-    }catch(err) {
-        throw err;
-    }
-}
+let connect = mysql.connect;
+
+/**
+ * Creates a Connection instance.
+ * Each connection instance maps to a single database. This method is helpful
+ *   when mangaging multiple db connections.
+ * @param params MySQL connection params
+ * @returns the created Connection object
+ */
+let createConnection = mysql.createConnection;
+
+/** Returns the default connection of the mysql commands module. */
+let {connection, connections} = mysql;
 
 /**
  * Defines or retrieves a model.
@@ -23,17 +27,16 @@ async function connect(params: ConnectionParams){
  * @param schema a schema. necessary when defining a model
  * @returns The compiled model
  */
-function model<T extends Document>(table: string, schema: Schema){
-    return new Model<T>(table, schema);
+function model(table: string, schema: Schema){
+    return connection.model(table, schema);
 }
-
-/** Returns the default connection of the mysql commands module. */
-const connection = mysql.connection;
 
 
 export {
     connect,
+    createConnection,
     Schema,
     model,
-    connection
+    connection,
+    connections
 }

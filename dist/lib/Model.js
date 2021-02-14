@@ -72,10 +72,12 @@ const selectorActions = {
     $nin: 'NOT LIKE'
 };
 class Model {
-    constructor(table, Schema) {
-        this.schema = Schema;
+    constructor(table, schema, db) {
+        this.schema = schema;
+        this.db = db;
         this.docProps = {
             schema: this.schema,
+            db: this.db,
             table: table
         };
     }
@@ -167,7 +169,7 @@ class Model {
             else
                 insertNext();
             return this.checkDb(() => {
-                return mysql_1.default.execute(query)
+                return mysql_1.default.execute(query, this.db.db)
                     .then(() => {
                     if (callback)
                         callback(null, docs);
@@ -213,7 +215,7 @@ class Model {
                 else
                     updateNext();
                 return this.checkDb(() => {
-                    return mysql_1.default.execute(query)
+                    return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
                             callback(null);
@@ -263,7 +265,7 @@ class Model {
                 else
                     updateNext();
                 return this.checkDb(() => {
-                    return mysql_1.default.execute(query)
+                    return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
                             callback(null);
@@ -299,7 +301,7 @@ class Model {
                 else
                     deleteNext();
                 return this.checkDb(() => {
-                    return mysql_1.default.execute(query)
+                    return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
                             callback(null);
@@ -332,7 +334,7 @@ class Model {
                 else
                     deleteNext();
                 return this.checkDb(() => {
-                    return mysql_1.default.execute(query)
+                    return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
                             callback(null);
@@ -358,7 +360,7 @@ class Model {
         try {
             let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
             return this.checkDb(() => {
-                return mysql_1.default.execute(query).then(([res]) => {
+                return mysql_1.default.execute(query, this.db.db).then(([res]) => {
                     let count = res[0]['COUNT(*)'];
                     if (callback)
                         callback(null, count);

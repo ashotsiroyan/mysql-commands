@@ -1,6 +1,6 @@
 {
   "name": "@ashotsiroyan/mysql-commands",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Control MySQL db with json",
   "repository": "git://github.com/ashotsiroyan/mysql-commands",
   "main": "./dist/index.js",

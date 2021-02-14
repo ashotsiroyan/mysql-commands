@@ -2,6 +2,7 @@ import mysql from './mysql';
 import Document from './Document';
 import DocumentQuery from './DocumentQuery';
 import Schema from './Schema';
+import Connection from './Connection';
 
 
 function getConditions(arg?: RootQuerySelector | FilterQuery) {
@@ -101,6 +102,7 @@ type FilterQuery = {
 
 export interface DocProps{
     schema: Schema;
+    db: Connection;
     table: string;
 }
 
@@ -141,12 +143,15 @@ interface IModel<T extends Document>{
 class Model<T extends Document> implements IModel<T>{
     private docProps: DocProps;
     public readonly schema: Schema;
+    public readonly db: Connection;
 
-    constructor(table: string, Schema: Schema){
-        this.schema = Schema;
+    constructor(table: string, schema: Schema, db: Connection){
+        this.schema = schema;
+        this.db = db;
 
         this.docProps = {
             schema: this.schema,
+            db: this.db,
             table: table
         }
     }
@@ -276,7 +281,7 @@ class Model<T extends Document> implements IModel<T>{
                 insertNext();
 
             return this.checkDb(()=>{
-                return mysql.execute(query)
+                return mysql.execute(query, this.db.db)
                     .then(()=>{
                         if(callback)
                             callback(null, docs);
@@ -334,7 +339,7 @@ class Model<T extends Document> implements IModel<T>{
                     updateNext();
     
                 return this.checkDb(()=>{
-                    return mysql.execute(query)
+                    return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -394,7 +399,7 @@ class Model<T extends Document> implements IModel<T>{
                     updateNext();
 
                 return this.checkDb(()=>{
-                    return mysql.execute(query)
+                    return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -436,7 +441,7 @@ class Model<T extends Document> implements IModel<T>{
                     deleteNext();
 
                 return this.checkDb(()=>{
-                    return mysql.execute(query)
+                    return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -474,7 +479,7 @@ class Model<T extends Document> implements IModel<T>{
                     deleteNext();
 
                 return this.checkDb(()=>{
-                    return mysql.execute(query)
+                    return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -503,7 +508,7 @@ class Model<T extends Document> implements IModel<T>{
             let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
         
             return this.checkDb(()=>{
-                return mysql.execute(query).then(([res]: any[])=>{
+                return mysql.execute(query, this.db.db).then(([res]: any[])=>{
                     let count = res[0]['COUNT(*)'];
 
                     if(callback)

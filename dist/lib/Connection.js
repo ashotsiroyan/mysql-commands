@@ -8,8 +8,8 @@ const Model_1 = __importDefault(require("./Model"));
 class Connection {
     constructor(props) {
         this.models = {};
-        this.name = props.database;
-        this.db = promise_1.default.createPool(props);
+        this.name = props ? props.database : '';
+        this.db = props ? promise_1.default.createPool(props) : undefined;
     }
     /**  Switches to a different database using the same connection pool. */
     useDb(props) {
@@ -24,7 +24,7 @@ class Connection {
      * @returns The compiled model
      */
     model(table, Schema) {
-        let model = new Model_1.default(table, Schema);
+        let model = new Model_1.default(table, Schema, this);
         this.models[table] = model;
         return model;
     }

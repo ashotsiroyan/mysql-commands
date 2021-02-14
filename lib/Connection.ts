@@ -17,9 +17,9 @@ class Connection{
     public name: string;
     public db?: mysql.Pool;
     public models: ConnectionModel = {};
-    constructor(props: ConnectionParams){
-        this.name = props.database;
-        this.db = mysql.createPool(props);
+    constructor(props?: ConnectionParams){
+        this.name = props?props.database:'';
+        this.db = props?mysql.createPool(props):undefined;
     }
 
     /**  Switches to a different database using the same connection pool. */
@@ -37,7 +37,7 @@ class Connection{
      * @returns The compiled model
      */
     model(table: string, Schema: Schema){
-        let model = new Model(table, Schema);
+        let model = new Model(table, Schema, this);
         this.models[table] = model;
 
         return model;
