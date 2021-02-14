@@ -27,8 +27,10 @@ interface SchemaOptions {
 }
 
 interface SchemaMethods {
-    save?: (params:any, next: ()=> void ) => void;
-    update?: (params:any, next: ()=> void ) => void;
+    save?: (params: any, next: ()=> void ) => void;
+    update?: (params: any, next: ()=> void ) => void;
+    delete?: (params: any, next: ()=> void ) => void;
+    remove?: (params: any, next: ()=> void ) => void;
 }
 
 export interface SchemaDefinition{
@@ -48,6 +50,14 @@ class Schema{
         this.obj = definition;
         this.options = options;
         this.methods = {};
+
+        const hasId = this.options._id === undefined || this.options._id?true:false;
+
+        if(hasId)
+            this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
+
+        if(this.options.timestamps)
+            this.obj = {...this.obj, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
     }
 
     pre(method: 'save' | 'update', callBack: (params: Document, next: ()=> void ) => void){
@@ -85,12 +95,6 @@ class Schema{
         let mysql: string = "",
             indexSql: string = "";
 
-        if(hasId)
-            this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
-
-        if(this.options.timestamps)
-            this.obj = {...this.obj, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
-            
         Object.keys(this.obj).forEach((field, i)=>{
             let option = this.obj[field];
             mysql += `${field} `;

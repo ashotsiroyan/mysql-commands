@@ -1,20 +1,18 @@
 import mysql from './mysql';
-import actions from './plugins/actions';
 import Document from './Document';
 import DocumentQuery from './DocumentQuery';
 import Schema from './Schema';
 
-const pool = mysql.pool;
 
-function getConditions(arg:any) {
+function getConditions(arg?: RootQuerySelector | FilterQuery) {
     let filterFileds = "";
 
-    const closer = ({params, prevField = null}:any) =>{
+    const closer = ({params, prevField = null}: any) =>{
         if(params){
             Object.keys(params).forEach((field, i)=>{
                 if(typeof params[field] === 'object'){
                     if(field === '$or' || field === '$and'){
-                        params[field].forEach((option:any, j:number)=>{
+                        params[field].forEach((option: any, j: number)=>{
                             filterFileds += "(";
                             closer({params: option});
                             if(filterFileds.slice(-5) === ' AND ')
@@ -27,8 +25,8 @@ function getConditions(arg:any) {
                             closer({params: params[field], prevField: field});
                         }
                         else if(field === '$in' || field === '$nin'){
-                            params[field].forEach((value:any)=>{
-                                filterFileds += `${prevField} ${actions[field]} ${pool.escape(value)} OR `;
+                            params[field].forEach((value: any)=>{
+                                filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)} OR `;
                             });
                         }
                     }
@@ -36,9 +34,9 @@ function getConditions(arg:any) {
                     let value = params[field];
 
                     if(field[0] === '$'){
-                        filterFileds += `${prevField} ${actions[field]} ${pool.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                        filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
                     }else{
-                        filterFileds += `${field} = ${pool.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                        filterFileds += `${field} = ${mysql.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
                     }
                 }
             });
@@ -59,11 +57,11 @@ function getConditions(arg:any) {
     return filterFileds;
 }
 
-function getFileds(arg: any){
+function getFileds(arg?: string[]){
     let showFileds = arg && arg.length > 0?"":"*";
 
     if(arg && arg.length > 0)
-        arg.forEach((field: any, i: number)=>{
+        arg.forEach((field: string, i: number)=>{
             showFileds += `${field}${i !== arg.length - 1?', ':''}`;
         });
 
@@ -79,6 +77,17 @@ type QuerySelector = {
     $lte?: any;
     $ne?: any;
     $nin?: string | string[] | number | number[];
+}
+
+const selectorActions: QuerySelector = {
+    $lt: '<',
+    $gt: '>',
+    $lte: '<=',
+    $gte: '>=',
+    $eq: '=',
+    $ne: '!=',
+    $in: 'LIKE',
+    $nin: 'NOT LIKE'
 }
 
 type RootQuerySelector = {
@@ -204,7 +213,7 @@ class Model<T extends Document> implements IModel<T>{
             fields = null;
         }
 
-        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${pool.escape(id)} LIMIT 1`, this.docProps, 'findById');
+        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.tableName} WHERE _id = ${mysql.escape(id)} LIMIT 1`, this.docProps, 'findById');
 
         if(callback)
             query.exec(callback);
@@ -239,14 +248,14 @@ class Model<T extends Document> implements IModel<T>{
                     return this.new(doc);
                 });
 
-            const insert = () =>{       
+            const insertNext = () =>{       
                 let keys = Object.keys(this.schema.obj),
                     values = "",
                     cols = "";
 
                 docs.forEach((row, i)=>{
                     keys.forEach((key, j)=>{
-                        let value = pool.escape(row[key]);
+                        let value = mysql.escape(row[key]);
         
                         if(i === 0)
                             cols += `${key}${j !== keys.length - 1?', ':''}`;
@@ -261,13 +270,13 @@ class Model<T extends Document> implements IModel<T>{
             if(this.schema.methods.save){
                 docs.forEach((doc, i)=>{
                     if(this.schema.methods.save)
-                        this.schema.methods.save(doc, ()=>{if(i === docs.length - 1) insert();});
+                        this.schema.methods.save(doc, ()=>{if(i === docs.length - 1) insertNext();});
                 });
             }else
-                insert();
+                insertNext();
 
             return this.checkDb(()=>{
-                return pool.execute(query)
+                return mysql.execute(query)
                     .then(()=>{
                         if(callback)
                             callback(null, docs);
@@ -295,7 +304,7 @@ class Model<T extends Document> implements IModel<T>{
             if(filterFileds.trim() !== "" && Object.keys(update).length > 0){
                 let query = `UPDATE ${this.tableName} SET`;
                     
-                const insert = () =>{
+                const updateNext = () =>{
                     let updateString = "";
 
                     Object.keys(this.schema.obj).forEach((key)=>{
@@ -306,7 +315,7 @@ class Model<T extends Document> implements IModel<T>{
                                 value = new Date();
         
                             if(value){
-                                value = pool.escape(value);
+                                value = mysql.escape(value);
 
                                 updateString += `${key} = ${value}, `;
                             }
@@ -320,12 +329,12 @@ class Model<T extends Document> implements IModel<T>{
                 }
 
                 if(this.schema.methods.update)
-                    this.schema.methods.update(update, insert);
+                    this.schema.methods.update(update, updateNext);
                 else
-                    insert();
+                    updateNext();
     
                 return this.checkDb(()=>{
-                    return pool.execute(query)
+                    return mysql.execute(query)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -355,7 +364,7 @@ class Model<T extends Document> implements IModel<T>{
             if(id && Object.keys(update).length > 0){
                 let query = `UPDATE ${this.tableName} SET`;
                     
-                const insert = () =>{
+                const updateNext = () =>{
                     let updateString = "";
 
                     Object.keys(this.schema.obj).forEach((key)=>{
@@ -366,7 +375,7 @@ class Model<T extends Document> implements IModel<T>{
                                 value = new Date();
         
                             if(value){
-                                value = pool.escape(value);
+                                value = mysql.escape(value);
 
                                 updateString += `${key} = ${value}, `;
                             }
@@ -376,16 +385,16 @@ class Model<T extends Document> implements IModel<T>{
                     if(updateString.slice(-2) === ', ')
                         updateString = updateString.slice(0, -2);
 
-                    query += ` ${updateString} WHERE _id = ${pool.escape(id)}`;
+                    query += ` ${updateString} WHERE _id = ${mysql.escape(id)}`;
                 }
 
                 if(this.schema.methods.update)
-                    this.schema.methods.update(update, insert);
+                    this.schema.methods.update(update, updateNext);
                 else
-                    insert();
+                    updateNext();
 
                 return this.checkDb(()=>{
-                    return pool.execute(query)
+                    return mysql.execute(query)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -416,9 +425,18 @@ class Model<T extends Document> implements IModel<T>{
 
             if(filterFileds.trim() !== ""){
                 let query = `DELETE FROM ${this.tableName} ${filterFileds}`;
+  
+                const deleteNext = () =>{
+
+                }
+
+                if(this.schema.methods.delete)
+                    this.schema.methods.delete(this, deleteNext);
+                else
+                    deleteNext();
 
                 return this.checkDb(()=>{
-                    return pool.execute(query)
+                    return mysql.execute(query)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -444,10 +462,19 @@ class Model<T extends Document> implements IModel<T>{
     findByIdAndDelete(id: string, callback?: (err: any, res?: Document)=>void){
         try{
             if(id){
-                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(id)}`;
-                
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${mysql.escape(id)}`;
+                                
+                const deleteNext = () =>{
+
+                }
+
+                if(this.schema.methods.delete)
+                    this.schema.methods.delete(this, deleteNext);
+                else
+                    deleteNext();
+
                 return this.checkDb(()=>{
-                    return pool.execute(query)
+                    return mysql.execute(query)
                         .then(()=>{
                             if(callback)
                                 callback(null);
@@ -476,7 +503,7 @@ class Model<T extends Document> implements IModel<T>{
             let query = `SELECT COUNT(*) FROM ${this.tableName} ${getConditions(conditions)}`;
         
             return this.checkDb(()=>{
-                return pool.execute(query).then(([res]: any[])=>{
+                return mysql.execute(query).then(([res]: any[])=>{
                     let count = res[0]['COUNT(*)'];
 
                     if(callback)
@@ -492,8 +519,9 @@ class Model<T extends Document> implements IModel<T>{
                 throw err;
         }
     }
+
     private checkDb( next: ()=> any ){
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
+        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
             .then(()=>{
                 return next();
             })

@@ -2,13 +2,12 @@ import mysql from './mysql';
 import Document from './Document';
 import {DocProps} from './Model';
 
-const pool = mysql.pool;
 
 type SortType = {
     [field: string]: -1 | 1
 }
 
-type FunName = 'find' | 'findOne' | 'findById';
+type FnName = 'find' | 'findOne' | 'findById';
 
 class DocumentQuery<T, DocType extends Document>{
     private mainQuery: string = "";
@@ -17,9 +16,9 @@ class DocumentQuery<T, DocType extends Document>{
     private limitQuery: string = "";
 
     private docProps: DocProps;
-    private fnName: FunName;
+    private fnName: FnName;
 
-    constructor(query: string, docProps: DocProps, fnName: FunName){
+    constructor(query: string, docProps: DocProps, fnName: FnName){
         this.mainQuery = query;
         this.docProps = docProps;
         this.fnName = fnName;
@@ -32,6 +31,7 @@ class DocumentQuery<T, DocType extends Document>{
 
         return this;
     }
+
     skip(val: number | string){
         if(val){
             this.skipQuery = " OFFSET " + val;
@@ -39,6 +39,7 @@ class DocumentQuery<T, DocType extends Document>{
         
         return this;
     }
+
     sort(arg: SortType){
         if(Object.keys(arg).length > 0){
             let query = " ORDER BY ";
@@ -62,7 +63,7 @@ class DocumentQuery<T, DocType extends Document>{
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
             return this.checkDb(()=>{
-                return pool.execute(query)
+                return mysql.execute(query)
                     .then(([rows]: any[])=>{
                         mainQuery = "";
                         limitQuery = "";
@@ -104,8 +105,9 @@ class DocumentQuery<T, DocType extends Document>{
                 throw err;
         }
     }
+
     private checkDb( next: ()=> any ){
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
+        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
             .then(()=>{
                 return next();
             })

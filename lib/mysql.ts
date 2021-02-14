@@ -1,41 +1,53 @@
 import mysql from 'mysql2/promise';
+import Connection, {ConnectionParams} from './Connection';
+
 
 interface ISingleton {
-    pool: {
-        execute: (sql: string, values?: any) => any;
-        query: (sql: string, values?: any) => any;
-        escape: (value: string) => any;
-        format: (sql: string, values?: any) => any;
-    };
-    connect: (props: any) => boolean | undefined;
-}
-
-export type connectionParams = {
-    host:string;
-    user:string;
-    password:string;
-    database:string;
+    connection(): Connection;
+    connect: (props: any) => Connection;
+    escape: (value: string) => any;
+    format: (sql: string, values?: any) => any;
+    execute: (sql: string, db?: mysql.Pool) => any;
+    query: (sql: string, db?: mysql.Pool) => any;
 }
 
 var Singleton: ISingleton = (function() {
-    var instance: any;
+    var connection: Connection;
 
     return {
-        pool: {
-            execute: (sql: string, values?: any) => {if(instance) return instance.execute(sql, values); else throw "Isn't connected to database.";},
-            query: (sql: string, values?: any) => {if(instance) return instance.query(sql, values); else throw "Isn't connected to database.";},
-            escape: (value: string) => mysql.escape(value),
-            format: (sql: string, values?: any) => mysql.format(sql, values)
+        connection: function () {
+            return connection;
         },
-        connect: function (props: connectionParams) {
+        connect: function (props: ConnectionParams) {
             try{
-                instance = mysql.createPool(props);
-
-                return true;
+                if(!connection)
+                    connection = new Connection(props);
+                else
+                    connection.useDb(props);
+    
+                return connection;
             }catch(err){
                 throw err;
             }
-        }
+        },
+        escape: (value: string) => mysql.escape(value),
+        format: (sql: string, values?: any) => mysql.format(sql, values),
+        execute: (sql: string, db?: mysql.Pool) => {
+            if(db)
+                return db.execute(sql); 
+            else if(connection.db)
+                return connection.db.execute(sql); 
+            else
+                throw "Database isn't connected.";
+        },
+        query: (sql: string, db?: mysql.Pool) => {
+            if(db) 
+                return db.query(sql); 
+            else if(connection.db) 
+                return connection.db.query(sql); 
+            else
+                throw "Database isn't connected.";
+        },
     };
 })();
 

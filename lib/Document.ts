@@ -3,8 +3,6 @@ import ObjectId from './plugins/ObjectId';
 
 import Schema, {SchemaDefinition} from './Schema';
 
-const pool = mysql.pool;
-
 interface DocumentParams{
     schema: Schema;
     table: string;
@@ -37,41 +35,13 @@ class Document implements IDocument{
     get schema(){
         return this.#schema;
     }
+
     get tableName(){
         return this.#table;
     }
+
     get isNew(){
         return this.#isNew;
-    }
-
-    remove(): Document | Promise<Document>;
-    remove(callback: (err: any, res?: Document)=> void): void;
-    remove(callback?: (err: any, res?: Document)=> void){
-        try{
-            if(this['_id']){
-                let query = `DELETE FROM ${this.tableName} WHERE _id = ${pool.escape(this['_id'])}`;
-                
-                return this.checkDb(()=>{
-                    return pool.execute(query)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, this);
-                            else
-                                return this;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
-            }
-            else
-                throw "ID isn't filled."
-        }catch(err){
-            if(callback){
-                callback(err);
-            }else
-                throw err;
-        }
     }
 
     save(): Document | Promise<Document>;
@@ -80,7 +50,7 @@ class Document implements IDocument{
         try{
             let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`;
 
-            const insert = () =>{
+            const saveNext = () =>{
                 let keys = Object.keys(this.#schema.obj),
                     cols = "",
                     values = "",
@@ -92,7 +62,7 @@ class Document implements IDocument{
                     if(!this.isNew && this.#schema.options.timestamps && key === '_updatedAt')
                         value = new Date();
 
-                    value = pool.escape(value);
+                    value = mysql.escape(value);
     
                     if(this.isNew){
                         cols += `${key}, `;
@@ -114,18 +84,18 @@ class Document implements IDocument{
                     if(updateString.slice(-2) === ', ')
                         updateString = updateString.slice(0, -2);
 
-                    query += ` ${updateString} WHERE _id = ${pool.escape(this['_id'])}`;
+                    query += ` ${updateString} WHERE _id = ${mysql.escape(this['_id'])}`;
                 }
             }
 
 
             if(this.#schema.methods.save)
-                this.#schema.methods.save(this, insert);
+                this.#schema.methods.save(this, saveNext);
             else
-                insert();
+                saveNext();
 
             return this.checkDb(()=>{
-                return pool.execute(query)
+                return mysql.execute(query)
                     .then(()=>{
                         if(callback)
                             callback(null, this as Document);
@@ -143,6 +113,46 @@ class Document implements IDocument{
                 throw err;
         }
     }
+
+    remove(): Document | Promise<Document>;
+    remove(callback: (err: any, res?: Document)=> void): void;
+    remove(callback?: (err: any, res?: Document)=> void){
+        try{
+            if(this['_id']){
+                let query = `DELETE FROM ${this.tableName} WHERE _id = ${mysql.escape(this['_id'])}`;
+                
+                const removeNext = () =>{
+
+                }
+
+                if(this.#schema.methods.remove)
+                    this.#schema.methods.remove(this, removeNext);
+                else
+                    removeNext();
+
+                return this.checkDb(()=>{
+                    return mysql.execute(query)
+                        .then(()=>{
+                            if(callback)
+                                callback(null, this);
+                            else
+                                return this;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
+            }
+            else
+                throw "ID isn't filled."
+        }catch(err){
+            if(callback){
+                callback(err);
+            }else
+                throw err;
+        }
+    }
+
     private convertData({doc}: any){
         const hasId = this.#schema.options._id === undefined || this.#schema.options._id?true:false;
 
@@ -183,8 +193,9 @@ class Document implements IDocument{
             }
         });
     }
+
     private checkDb( next: ()=> any ){
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
+        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
             .then(()=>{
                 return next();
             })

@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mysql_1 = __importDefault(require("./mysql"));
 const Document_1 = __importDefault(require("./Document"));
-const pool = mysql_1.default.pool;
 class DocumentQuery {
     constructor(query, docProps, fnName) {
         this.mainQuery = "";
@@ -43,7 +42,7 @@ class DocumentQuery {
         try {
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== '' ? skipQuery : '');
             return this.checkDb(() => {
-                return pool.execute(query)
+                return mysql_1.default.execute(query)
                     .then(([rows]) => {
                     mainQuery = "";
                     limitQuery = "";
@@ -79,7 +78,7 @@ class DocumentQuery {
         }
     }
     checkDb(next) {
-        return pool.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
+        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
             .then(() => {
             return next();
         })
