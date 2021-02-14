@@ -1,6 +1,7 @@
 import Document from './Document';
 import DocumentQuery from './DocumentQuery';
 import Schema from './Schema';
+import Connection from './Connection';
 declare type QuerySelector = {
     $eq?: any;
     $gt?: any;
@@ -20,6 +21,7 @@ declare type FilterQuery = {
 };
 export interface DocProps {
     schema: Schema;
+    db: Connection;
     table: string;
 }
 interface IModel<T extends Document> {
@@ -48,7 +50,8 @@ interface IModel<T extends Document> {
 declare class Model<T extends Document> implements IModel<T> {
     private docProps;
     readonly schema: Schema;
-    constructor(table: string, Schema: Schema);
+    readonly db: Connection;
+    constructor(table: string, schema: Schema, db: Connection);
     get tableName(): string;
     new(doc?: any): Document;
     find(callback?: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;

@@ -14,7 +14,7 @@ declare class Connection {
     name: string;
     db?: mysql.Pool;
     models: ConnectionModel;
-    constructor(props: ConnectionParams);
+    constructor(props?: ConnectionParams);
     /**  Switches to a different database using the same connection pool. */
     useDb(props: ConnectionParams): this;
     /**

@@ -1,6 +1,8 @@
+import Connection from './Connection';
 import Schema from './Schema';
 interface DocumentParams {
     schema: Schema;
+    db: Connection;
     table: string;
     isNew?: boolean;
     doc: object;
