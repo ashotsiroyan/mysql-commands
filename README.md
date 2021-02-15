@@ -1,26 +1,25 @@
-# MySQL commands
-MySQL commands is a MySQL object modeling tool designed to work in an asynchronous environment. MySQL commands supports both promises and callbacks.
+# SQLtool
+SQLtool is a MySQL object modeling tool designed to work in an asynchronous environment. SQLtool supports both promises and callbacks.
 
 ## Installation
 ```
-$ npm install @ashotsiroyan/mysql-commands
+$ npm install @ashotsiroyan/sqltool
 ```
 
 ## Importing
 ```js
 // Using Node.js `require()`
-const mysql = require('@ashotsiroyan/mysql-commands');
+const sqltool = require('@ashotsiroyan/sqltool');
 
 // Using ES6 imports
-import mysql from '@ashotsiroyan/mysql-commands';
+import sqltool from '@ashotsiroyan/sqltool';
 ```
 
 ## Overview
 
 ### Connecting to MySQL
-
 ```js
-await mysql.connect({
+await sqltool.connect({
     host: 'localhost',
     user: 'root',
     password: '',
@@ -28,15 +27,15 @@ await mysql.connect({
 });
 ```
 
-Once connected, the `open` event is fired on the `Connection` instance. If you're using `mysql.connect`, the `Connection` is `mysql.connection`. Otherwise, `mysql.createConnection` return value is a `Connection`.
+Once connected, the `open` event is fired on the `Connection` instance. If you're using `sqltool.connect`, the `Connection` is `sqltool.connection`. Otherwise, `sqltool.createConnection` return value is a `Connection`.
 
-Important! MySQL commands buffers all the commands until it's connected to the database. This means that you don't have to wait until it connects to MySQL in order to define models.
+Important! SQLtool buffers all the commands until it's connected to the database. This means that you don't have to wait until it connects to MySQL in order to define models.
 
 ### Defining a Model
 Models are defined through the Schema interface.
 
 ```js
-const Schema = mysql.Schema;
+const Schema = sqltool.Schema;
 
 const BlogPost = new Schema({
   author: 'VARCHAR',
@@ -63,19 +62,18 @@ Comment.pre('save', function (params, next) {
 ```
 
 ### Accessing a Model
-Once we define a model through `mysql.model('ModelName', mySchema)`, we can access it through the same function
+Once we define a model through `sqltool.model('ModelName', mySchema)`, we can access it through the same function
 
 ```js
-const MyModel = mysql.model('ModelName');
+const MyModel = sqltool.model('ModelName');
 ```
 
 Or just do it all at once
-
 ```js
-const MyModel = mysql.model('ModelName', mySchema);
+const MyModel = sqltool.model('ModelName', mySchema);
 ```
-The first argument is the singular name of the table your model is for. 
 
+The first argument is the singular name of the table your model is for. 
 
 Once we have our model, we can then instantiate it, and save it:
 ```js
@@ -93,15 +91,15 @@ MyModel.find({}).exec(function (err, docs) {
 });
 ```
 
-You can also `findOne`, `findById`, `update`, etc.
+You can also `findOne`, `findById`, `findAndUpdate`, etc.
 ```js
 const instance = await MyModel.findOne({ ... }).exec();
 console.log(instance.key);  // 'hello'
 ```
 
-Important! If you opened a separate connection using `mysql.createConnection()` but attempt to access the model through `mysql.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
+Important! If you opened a separate connection using `sqltool.createConnection()` but attempt to access the model through `sqltool.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
 ```js
-const conn = mysql.createConnection({connection params});
+const conn = sqltool.createConnection({ conn_params });
 const MyModel = conn.model('ModelName', schema);
 const m = new MyModel;
 m.save(); // works
@@ -110,8 +108,8 @@ m.save(); // works
 vs
 
 ```js
-const conn = mysql.createConnection({connection params});
-const MyModel = mysql.model('ModelName', schema);
+const conn = sqltool.createConnection({ conn_params });
+const MyModel = sqltool.model('ModelName', schema);
 const m = new MyModel;
 m.save(); // does not work b/c the default connection object was never connected
 ```

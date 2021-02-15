@@ -3,7 +3,7 @@ import Schema from './Schema';
 
 
 /**
- * Opens the default mysql commands connection.
+ * Opens the default sqltool connection.
  * @param params MySQL connection params
  * @returns the default Connection object
  */
@@ -18,10 +18,10 @@ let connect = mysql.connect;
  */
 let createConnection = mysql.createConnection;
 
-/** Returns the default connection of the mysql commands module. */
+/** Returns the default connection of the sqltool module. */
 let connection = mysql.connection;
 
-/** An array containing all connections associated with this mysql commands instance. */
+/** An array containing all connections associated with this sqltool instance. */
 let connections = mysql.connections;
 
 /**

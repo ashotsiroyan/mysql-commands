@@ -1,6 +1,6 @@
 import Schema from './Schema';
 /**
- * Opens the default mysql commands connection.
+ * Opens the default sqltool connection.
  * @param params MySQL connection params
  * @returns the default Connection object
  */
@@ -13,9 +13,9 @@ declare let connect: (props: any) => import("./Connection").default;
  * @returns the created Connection object
  */
 declare let createConnection: (props: any) => import("./Connection").default;
-/** Returns the default connection of the mysql commands module. */
+/** Returns the default connection of the sqltool module. */
 declare let connection: import("./Connection").default;
-/** An array containing all connections associated with this mysql commands instance. */
+/** An array containing all connections associated with this sqltool instance. */
 declare let connections: import("./Connection").default[];
 /**
  * Defines or retrieves a model.

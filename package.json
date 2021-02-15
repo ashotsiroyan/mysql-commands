@@ -1,15 +1,25 @@
 {
-  "name": "@ashotsiroyan/mysql-commands",
-  "version": "1.4.3",
-  "description": "Control MySQL db with json",
-  "repository": "git://github.com/ashotsiroyan/mysql-commands",
+  "name": "@ashotsiroyan/sqltool",
+  "version": "1.4.4",
+  "description": "MySQL object modeling tool designed to work in an asynchronous environment.",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ashotsiroyan/sqltool.git"
+  },
   "main": "./dist/index.js",
   "keywords": [
-    "MySQL"
+    "mysql", "document", "model", "schema", "database"
   ],
   "author": "Ashot Siroyan",
   "license": "MIT",
   "dependencies": {
     "mysql2": "^2.2.5"
+  },
+  "bugs": {
+    "url": "https://github.com/ashotsiroyan/sqltool/issues"
+  },
+  "homepage": "https://github.com/ashotsiroyan/sqltool#readme",
+  "directories": {
+    "lib": "lib"
   }
 }
