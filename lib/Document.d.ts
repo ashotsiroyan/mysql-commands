@@ -3,7 +3,7 @@ import Schema from './Schema';
 interface DocumentParams {
     schema: Schema;
     db: Connection;
-    table: string;
+    modelName: string;
     isNew?: boolean;
     doc: object;
 }
@@ -18,7 +18,7 @@ declare class Document implements IDocument {
     [name: string]: any;
     constructor(params: DocumentParams);
     get schema(): Schema;
-    get tableName(): string;
+    get modelName(): string;
     get isNew(): boolean;
     save(): Document | Promise<Document>;
     save(callback: (err: any, res?: Document) => void): void;
