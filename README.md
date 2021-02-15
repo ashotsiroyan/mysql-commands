@@ -62,10 +62,8 @@ Comment.pre('save', function (params, next) {
 });
 ```
 
-Take a look at the example in examples/schema/schema.js for an end-to-end example of a typical setup.
-
 ### Accessing a Model
-Once we define a model through mysql.model('ModelName', mySchema), we can access it through the same function
+Once we define a model through `mysql.model('ModelName', mySchema)`, we can access it through the same function
 
 ```js
 const MyModel = mysql.model('ModelName');
@@ -95,13 +93,13 @@ MyModel.find({}).exec(function (err, docs) {
 });
 ```
 
-You can also findOne, findById, update, etc.
+You can also `findOne`, `findById`, `update`, etc.
 ```js
 const instance = await MyModel.findOne({ ... }).exec();
 console.log(instance.key);  // 'hello'
 ```
 
-Important! If you opened a separate connection using mysql.createConnection() but attempt to access the model through mysql.model('ModelName') it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
+Important! If you opened a separate connection using `mysql.createConnection()` but attempt to access the model through `mysql.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
 ```js
 const conn = mysql.createConnection({connection params});
 const MyModel = conn.model('ModelName', schema);
