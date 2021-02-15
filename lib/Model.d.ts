@@ -13,6 +13,7 @@ declare type QuerySelector = {
     $nin?: string | string[] | number | number[];
 };
 declare type RootQuerySelector = {
+    _id?: string;
     $or?: Array<FilterQuery>;
     $and?: Array<FilterQuery>;
 };
@@ -36,14 +37,14 @@ interface IModel<T extends Document> {
     insertOne(params: object, callback: (err: any, res?: Document) => void): void;
     insertMany(params: object[]): Promise<Document[]>;
     insertMany(params: object[], callback: (err: any, res?: Document[]) => void): void;
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document) => void): void;
-    findByIdAndUpdate(id: string, update: any): Promise<Document>;
-    findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document) => void): void;
-    findAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<Document>;
-    findAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document) => void): void;
-    findByIdAndDelete(id: string): Promise<Document>;
-    findByIdAndDelete(id: string, callback: (err: any, res?: Document) => void): void;
+    update(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
+    update(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any) => void): void;
+    updateById(id: string, update: any): Promise<any>;
+    updateById(id: string, update: any, callback: (err: any, raw?: any) => void): void;
+    delete(conditions: RootQuerySelector | FilterQuery): Promise<void>;
+    delete(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
+    deleteById(id: string): Promise<void>;
+    deleteById(id: string, callback: (err: any) => void): void;
     countDocuments(conditions: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
 }
@@ -66,14 +67,14 @@ declare class Model<T extends Document> implements IModel<T> {
     insertOne(params: object, callback: (err: any, res?: Document) => void): void;
     insertMany(params: object[]): Promise<Document[]>;
     insertMany(params: object[], callback: (err: any, res?: Document[]) => void): void;
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document) => void): void;
-    findByIdAndUpdate(id: string, update: any): Promise<Document>;
-    findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document) => void): void;
-    findAndDelete(conditions?: RootQuerySelector | FilterQuery): Promise<Document>;
-    findAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document) => void): void;
-    findByIdAndDelete(id: string): Promise<Document>;
-    findByIdAndDelete(id: string, callback: (err: any, res?: Document) => void): void;
+    update(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
+    update(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any) => void): void;
+    updateById(id: string, update: any): Promise<any>;
+    updateById(id: string, update: any, callback: (err: any, raw?: any) => void): void;
+    delete(conditions?: RootQuerySelector | FilterQuery): Promise<void>;
+    delete(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
+    deleteById(id: string): Promise<void>;
+    deleteById(id: string, callback: (err: any) => void): void;
     countDocuments(conditions?: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
     private checkDb;
