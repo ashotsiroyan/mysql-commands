@@ -7,7 +7,7 @@ import Schema, {SchemaDefinition} from './Schema';
 interface DocumentParams{
     schema: Schema;
     db: Connection;
-    table: string;
+    modelName: string;
     isNew?: boolean;
     doc: object;
 }
@@ -23,13 +23,13 @@ interface IDocument{
 class Document implements IDocument{
     #schema: Schema;
     #db: Connection;
-    #table: string;
+    #modelName: string;
     #isNew: boolean;
     [name: string]: any;
 
     constructor(params: DocumentParams){
         this.#schema = params.schema;
-        this.#table = params.table;
+        this.#modelName = params.modelName;
         this.#db = params.db;
         this.#isNew = params.isNew || false;
 
@@ -40,8 +40,8 @@ class Document implements IDocument{
         return this.#schema;
     }
 
-    get tableName(){
-        return this.#table;
+    get modelName(){
+        return this.#modelName;
     }
 
     get isNew(){
@@ -52,7 +52,7 @@ class Document implements IDocument{
     save(callback: (err: any, res?: Document)=> void): void;
     save(callback?: (err: any, res?: Document)=> void){
         try{
-            let query = this.isNew?"INSERT INTO " + this.tableName:`UPDATE ${this.tableName} SET`;
+            let query = this.isNew?"INSERT INTO " + this.modelName:`UPDATE ${this.modelName} SET`;
 
             const saveNext = () =>{
                 let keys = Object.keys(this.#schema.obj),
@@ -123,7 +123,7 @@ class Document implements IDocument{
     remove(callback?: (err: any, res?: Document)=> void){
         try{
             if(this['_id']){
-                let query = `DELETE FROM ${this.tableName} WHERE _id = ${mysql.escape(this['_id'])}`;
+                let query = `DELETE FROM ${this.modelName} WHERE _id = ${mysql.escape(this['_id'])}`;
                 
                 const removeNext = () =>{
 
@@ -199,7 +199,7 @@ class Document implements IDocument{
     }
 
     private checkDb( next: ()=> any ){
-        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
+        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.modelName} (${this.schema.query})`)
             .then(()=>{
                 return next();
             })

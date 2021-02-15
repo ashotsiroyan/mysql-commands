@@ -22,7 +22,7 @@ declare type FilterQuery = {
 export interface DocProps {
     schema: Schema;
     db: Connection;
-    table: string;
+    modelName: string;
 }
 interface IModel<T extends Document> {
     new: (doc?: any) => Document;
@@ -51,8 +51,8 @@ declare class Model<T extends Document> implements IModel<T> {
     private docProps;
     readonly schema: Schema;
     readonly db: Connection;
-    constructor(table: string, schema: Schema, db: Connection);
-    get tableName(): string;
+    constructor(name: string, schema: Schema, db: Connection);
+    get modelName(): string;
     new(doc?: any): Document;
     find(callback?: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;
     find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document[]) => void): DocumentQuery<T[], T>;

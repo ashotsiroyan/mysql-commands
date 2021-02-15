@@ -14,12 +14,14 @@ declare let connect: (props: any) => import("./Connection").default;
  */
 declare let createConnection: (props: any) => import("./Connection").default;
 /** Returns the default connection of the mysql commands module. */
-declare let connection: import("./Connection").default, connections: import("./Connection").default[];
+declare let connection: import("./Connection").default;
+/** An array containing all connections associated with this mysql commands instance. */
+declare let connections: import("./Connection").default[];
 /**
  * Defines or retrieves a model.
- * @param table the mysql db table and the model name
+ * @param name model and mysql db table name
  * @param schema a schema. necessary when defining a model
  * @returns The compiled model
  */
-declare function model(table: string, schema: Schema): import("./Model").default<import("./Document").default>;
+declare function model(name: string, schema: Schema): import("./Model").default<import("./Document").default>;
 export { connect, createConnection, Schema, model, connection, connections };

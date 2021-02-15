@@ -19,11 +19,11 @@ declare class Connection {
     useDb(props: ConnectionParams): this;
     /**
      * Defines or retrieves a model.
-     * @param table the mysql db table name and the model name
+     * @param name model and mysql db table name
      * @param schema a schema. necessary when defining a model
      * @returns The compiled model
      */
-    model(table: string, Schema: Schema): Model<import("./Document").default>;
+    model(name: string, schema: Schema): Model<import("./Document").default>;
     modelNames(): string[];
     deleteModel(model: string): this;
     /** Closes the connection */

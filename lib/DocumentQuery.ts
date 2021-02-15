@@ -107,7 +107,7 @@ class DocumentQuery<T, DocType extends Document>{
     }
 
     private checkDb( next: ()=> any ){
-        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
+        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.modelName} (${this.docProps.schema.query})`)
             .then(()=>{
                 return next();
             })

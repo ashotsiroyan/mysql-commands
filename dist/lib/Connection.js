@@ -19,13 +19,13 @@ class Connection {
     }
     /**
      * Defines or retrieves a model.
-     * @param table the mysql db table name and the model name
+     * @param name model and mysql db table name
      * @param schema a schema. necessary when defining a model
      * @returns The compiled model
      */
-    model(table, Schema) {
-        let model = new Model_1.default(table, Schema, this);
-        this.models[table] = model;
+    model(name, schema) {
+        let model = new Model_1.default(name, schema, this);
+        this.models[name] = model;
         return model;
     }
     modelNames() {

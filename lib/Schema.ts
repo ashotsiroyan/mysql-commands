@@ -63,9 +63,11 @@ class Schema{
     pre(method: 'save' | 'update', callBack: (params: Document, next: ()=> void ) => void){
         this.methods[method] = callBack;
     }
+
     remove(field: string){
         delete this.obj[field];
     }
+
     index(fields: SchemaIndex){      
         const exists = (name: string) =>{
             let is = false;
@@ -90,8 +92,10 @@ class Schema{
             }
         });
     }
+
     private convertToString(){
         const hasId = this.options._id === undefined || this.options._id?true:false;
+    
         let mysql: string = "",
             indexSql: string = "";
 

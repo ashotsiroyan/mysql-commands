@@ -19,16 +19,19 @@ let connect = mysql.connect;
 let createConnection = mysql.createConnection;
 
 /** Returns the default connection of the mysql commands module. */
-let {connection, connections} = mysql;
+let connection = mysql.connection;
+
+/** An array containing all connections associated with this mysql commands instance. */
+let connections = mysql.connections;
 
 /**
  * Defines or retrieves a model.
- * @param table the mysql db table and the model name
+ * @param name model and mysql db table name
  * @param schema a schema. necessary when defining a model
  * @returns The compiled model
  */
-function model(table: string, schema: Schema){
-    return connection.model(table, schema);
+function model(name: string, schema: Schema){
+    return connection.model(name, schema);
 }
 
 

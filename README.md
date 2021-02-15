@@ -2,7 +2,9 @@
 MySQL commands is a MySQL object modeling tool designed to work in an asynchronous environment. MySQL commands supports both promises and callbacks.
 
 ## Installation
-`$ npm install @ashotsiroyan/mysql-commands`
+```
+$ npm install @ashotsiroyan/mysql-commands
+```
 
 ## Importing
 ```
@@ -25,6 +27,9 @@ await mysql.connect({
     database: 'db_name'
 });
 ```
+Once connected, the `open` event is fired on the `Connection` instance. If you're using `mysql.connect`, the `Connection` is `mysql.connection`. Otherwise, `mysql.createConnection` return value is a `Connection`.
+
+Important! MySQL commands buffers all the commands until it's connected to the database. This means that you don't have to wait until it connects to MySQL in order to define models.
 
 ### Defining a Model
 Models are defined through the Schema interface.
@@ -39,6 +44,7 @@ const BlogPost = new Schema({
   date: 'DATE'
 });
 ```
+or
 
 ```
 const Comment = new Schema({
@@ -87,6 +93,22 @@ You can also findOne, findById, update, etc.
 ```
 const instance = await MyModel.findOne({ ... }).exec();
 console.log(instance.key);  // 'hello'
+```
+
+Important! If you opened a separate connection using mysql.createConnection() but attempt to access the model through mysql.model('ModelName') it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
+```
+const conn = mysql.createConnection({connection params});
+const MyModel = conn.model('ModelName', schema);
+const m = new MyModel;
+m.save(); // works
+```
+vs
+
+```
+const conn = mysql.createConnection({connection params});
+const MyModel = mysql.model('ModelName', schema);
+const m = new MyModel;
+m.save(); // does not work b/c the default connection object was never connected
 ```
 
 ```

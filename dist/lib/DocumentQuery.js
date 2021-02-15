@@ -78,7 +78,7 @@ class DocumentQuery {
         }
     }
     checkDb(next) {
-        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.table} (${this.docProps.schema.query})`)
+        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.modelName} (${this.docProps.schema.query})`)
             .then(() => {
             return next();
         })

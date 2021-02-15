@@ -15,7 +15,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _schema, _db, _table, _isNew;
+var _schema, _db, _modelName, _isNew;
 Object.defineProperty(exports, "__esModule", { value: true });
 const mysql_1 = __importDefault(require("./mysql"));
 const ObjectId_1 = __importDefault(require("./plugins/ObjectId"));
@@ -23,10 +23,10 @@ class Document {
     constructor(params) {
         _schema.set(this, void 0);
         _db.set(this, void 0);
-        _table.set(this, void 0);
+        _modelName.set(this, void 0);
         _isNew.set(this, void 0);
         __classPrivateFieldSet(this, _schema, params.schema);
-        __classPrivateFieldSet(this, _table, params.table);
+        __classPrivateFieldSet(this, _modelName, params.modelName);
         __classPrivateFieldSet(this, _db, params.db);
         __classPrivateFieldSet(this, _isNew, params.isNew || false);
         this.convertData({ doc: params.doc });
@@ -34,15 +34,15 @@ class Document {
     get schema() {
         return __classPrivateFieldGet(this, _schema);
     }
-    get tableName() {
-        return __classPrivateFieldGet(this, _table);
+    get modelName() {
+        return __classPrivateFieldGet(this, _modelName);
     }
     get isNew() {
         return __classPrivateFieldGet(this, _isNew);
     }
     save(callback) {
         try {
-            let query = this.isNew ? "INSERT INTO " + this.tableName : `UPDATE ${this.tableName} SET`;
+            let query = this.isNew ? "INSERT INTO " + this.modelName : `UPDATE ${this.modelName} SET`;
             const saveNext = () => {
                 let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj), cols = "", values = "", updateString = "";
                 keys.forEach((key) => {
@@ -99,7 +99,7 @@ class Document {
     remove(callback) {
         try {
             if (this['_id']) {
-                let query = `DELETE FROM ${this.tableName} WHERE _id = ${mysql_1.default.escape(this['_id'])}`;
+                let query = `DELETE FROM ${this.modelName} WHERE _id = ${mysql_1.default.escape(this['_id'])}`;
                 const removeNext = () => {
                 };
                 if (__classPrivateFieldGet(this, _schema).methods.remove)
@@ -162,7 +162,7 @@ class Document {
         });
     }
     checkDb(next) {
-        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.tableName} (${this.schema.query})`)
+        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.modelName} (${this.schema.query})`)
             .then(() => {
             return next();
         })
@@ -171,5 +171,5 @@ class Document {
         });
     }
 }
-_schema = new WeakMap(), _db = new WeakMap(), _table = new WeakMap(), _isNew = new WeakMap();
+_schema = new WeakMap(), _db = new WeakMap(), _modelName = new WeakMap(), _isNew = new WeakMap();
 exports.default = Document;
