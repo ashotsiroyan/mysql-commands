@@ -92,12 +92,13 @@ const selectorActions: QuerySelector = {
 }
 
 type RootQuerySelector = {
+    _id?: string;
     $or?: Array<FilterQuery>;
     $and?: Array<FilterQuery>;
 }
 
 type FilterQuery = {
-    [field: string]: QuerySelector | string | number
+    [field: string]: QuerySelector | string | number;
 }
 
 export interface DocProps{
@@ -124,17 +125,29 @@ interface IModel<T extends Document>{
     insertMany(params: object[]): Promise<Document[]>;
     insertMany(params: object[], callback: (err: any, res?: Document[])=> void): void;
 
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document)=> void): void;
+    update(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
+    update(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
 
-    findByIdAndUpdate(id: string, update: any): Promise<Document>;
-    findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document)=> void): void;
+    updateById(id: string, update: any): Promise<any>;
+    updateById(id: string, update: any, callback: (err: any, raw?: any)=> void): void;
 
-    findAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<Document>;
-    findAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document)=> void): void;
+    delete(conditions: RootQuerySelector | FilterQuery): Promise<void>;
+    delete(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
 
-    findByIdAndDelete(id: string): Promise<Document>;
-    findByIdAndDelete(id: string, callback: (err: any, res?: Document)=> void): void;
+    deleteById(id: string): Promise<void>;
+    deleteById(id: string, callback: (err: any)=> void): void;
+
+    // findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
+    // findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document)=> void): void;
+
+    // findByIdAndUpdate(id: string, update: any): Promise<Document>;
+    // findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document)=> void): void;
+
+    // findAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<Document>;
+    // findAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document)=> void): void;
+
+    // findByIdAndDelete(id: string): Promise<Document>;
+    // findByIdAndDelete(id: string, callback: (err: any, res?: Document)=> void): void;
 
     countDocuments(conditions: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number)=> void): void;
@@ -272,11 +285,8 @@ class Model<T extends Document> implements IModel<T>{
                 query += ` (${cols}) VALUES ${values}`;
             }
 
-            if(this.schema.methods.save){
-                docs.forEach((doc, i)=>{
-                    if(this.schema.methods.save)
-                        this.schema.methods.save(doc, ()=>{if(i === docs.length - 1) insertNext();});
-                });
+            if(this.schema.methods.insertMany){
+                this.schema.methods.insertMany(docs, insertNext);
             }else
                 insertNext();
 
@@ -300,9 +310,9 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document)=> void): void
-    findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, res?: Document)=> void){
+    update(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>
+    update(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void
+    update(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, raw?: any)=> void){
         try{
             let filterFileds = getConditions(conditions);
 
@@ -342,18 +352,20 @@ class Model<T extends Document> implements IModel<T>{
                     return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
-                                callback(null);
+                                callback(null, update);
                             else
-                                return true;
+                                return update;
                         })
                         .catch((err: any)=>{
                             throw err;
                         });
                 });
-            }else if(filterFileds.trim() === "")
-                throw "Filter fileds aren't filled.";
-            else if(Object.keys(update).length === 0)
-                throw "Update fileds aren't filled.";
+            }else{
+                if(callback)
+                    callback(null, update);
+                else
+                    return update;
+            }
         }catch(err){
             if(callback)
                 callback(err);
@@ -362,11 +374,11 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    findByIdAndUpdate(id: string, update: any): Promise<Document>
-    findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document)=> void): void
-    findByIdAndUpdate(id: string, update: any = {}, callback?: (err: any, res?: Document)=> void){
+    updateById(id: string, update: any): Promise<any>
+    updateById(id: string, update: any, callback: (err: any, raw?: any)=> void): void
+    updateById(id: string, update: any = {}, callback?: (err: any, raw?: any)=> void){
         try{
-            if(id && Object.keys(update).length > 0){
+            if(id && typeof id === 'string' && Object.keys(update).length > 0){
                 let query = `UPDATE ${this.modelName} SET`;
                     
                 const updateNext = () =>{
@@ -402,97 +414,90 @@ class Model<T extends Document> implements IModel<T>{
                     return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
-                                callback(null);
+                                callback(null, update);
                             else
-                                return true;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
-            }else if(!id)
-                throw "ID isn't filled."
-            else if(Object.keys(update).length === 0)
-                throw "Update fileds aren't filled.";
-        }catch(err){
-            if(callback)
-                callback(err);
-            else
-                throw err;
-        }
-    }
-
-    findAndDelete(conditions?: RootQuerySelector | FilterQuery): Promise<Document>
-    findAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document)=> void): void
-    findAndDelete(conditions?: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document)=> void){
-        try{
-            let filterFileds = getConditions(conditions);
-
-            if(filterFileds.trim() !== ""){
-                let query = `DELETE FROM ${this.modelName} ${filterFileds}`;
-  
-                const deleteNext = () =>{
-
-                }
-
-                if(this.schema.methods.delete)
-                    this.schema.methods.delete({}, deleteNext);
-                else
-                    deleteNext();
-
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null);
-                            else
-                                return true;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
-            }else
-                throw "Filter fileds aren't filled.";
-        }catch(err){
-            if(callback)
-                callback(err);
-            else
-                throw err;
-        }
-    }
-
-    findByIdAndDelete(id: string): Promise<Document>
-    findByIdAndDelete(id: string, callback: (err: any, res?: Document)=> void): void
-    findByIdAndDelete(id: string, callback?: (err: any, res?: Document)=> void){
-        try{
-            if(id){
-                let query = `DELETE FROM ${this.modelName} WHERE _id = ${mysql.escape(id)}`;
-                                
-                const deleteNext = () =>{
-
-                }
-
-                if(this.schema.methods.delete)
-                    this.schema.methods.delete({}, deleteNext);
-                else
-                    deleteNext();
-
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null);
-                            else
-                                return true;
+                                return update;
                         })
                         .catch((err: any)=>{
                             throw err;
                         });
                 });
             }
+            else{
+                if(callback)
+                    callback(null, update);
+                else
+                    return update;
+            }
+        }catch(err){
+            if(callback)
+                callback(err);
             else
-                throw "ID isn't filled."
+                throw err;
+        }
+    }
+
+    delete(conditions?: RootQuerySelector | FilterQuery): Promise<void>
+    delete(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void
+    delete(conditions?: RootQuerySelector | FilterQuery, callback?: (err: any)=> void){
+        try{
+            let filterFileds = getConditions(conditions);
+
+            if(filterFileds.trim() !== ""){
+                let query = `DELETE FROM ${this.modelName} ${filterFileds}`;
+
+                return this.checkDb(()=>{
+                    return mysql.execute(query, this.db.db)
+                        .then(()=>{
+                            if(callback)
+                                callback(null);
+                            else
+                                return undefined;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
+            }else{
+                if(callback)
+                    callback(null);
+                else
+                    return undefined;
+            }
+        }catch(err){
+            if(callback)
+                callback(err);
+            else
+                throw err;
+        }
+    }
+
+    deleteById(id: string): Promise<void>
+    deleteById(id: string, callback: (err: any)=> void): void
+    deleteById(id: string, callback?: (err: any)=> void){
+        try{
+            if(id && typeof id === 'string'){
+                let query = `DELETE FROM ${this.modelName} WHERE _id = ${mysql.escape(id)}`;
+
+                return this.checkDb(()=>{
+                    return mysql.execute(query, this.db.db)
+                        .then(()=>{
+                            if(callback)
+                                callback(null);
+                            else
+                                return undefined;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
+            }
+            else{
+                if(callback)
+                    callback(null);
+                else
+                    return undefined;
+            }
         }catch(err){
             if(callback)
                 callback(err);

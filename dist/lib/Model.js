@@ -159,12 +159,8 @@ class Model {
                 });
                 query += ` (${cols}) VALUES ${values}`;
             };
-            if (this.schema.methods.save) {
-                docs.forEach((doc, i) => {
-                    if (this.schema.methods.save)
-                        this.schema.methods.save(doc, () => { if (i === docs.length - 1)
-                            insertNext(); });
-                });
+            if (this.schema.methods.insertMany) {
+                this.schema.methods.insertMany(docs, insertNext);
             }
             else
                 insertNext();
@@ -188,7 +184,7 @@ class Model {
                 throw err;
         }
     }
-    findAndUpdate(conditions, update = {}, callback) {
+    update(conditions, update = {}, callback) {
         try {
             let filterFileds = getConditions(conditions);
             if (filterFileds.trim() !== "" && Object.keys(update).length > 0) {
@@ -218,19 +214,21 @@ class Model {
                     return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
-                            callback(null);
+                            callback(null, update);
                         else
-                            return true;
+                            return update;
                     })
                         .catch((err) => {
                         throw err;
                     });
                 });
             }
-            else if (filterFileds.trim() === "")
-                throw "Filter fileds aren't filled.";
-            else if (Object.keys(update).length === 0)
-                throw "Update fileds aren't filled.";
+            else {
+                if (callback)
+                    callback(null, update);
+                else
+                    return update;
+            }
         }
         catch (err) {
             if (callback)
@@ -239,9 +237,9 @@ class Model {
                 throw err;
         }
     }
-    findByIdAndUpdate(id, update = {}, callback) {
+    updateById(id, update = {}, callback) {
         try {
-            if (id && Object.keys(update).length > 0) {
+            if (id && typeof id === 'string' && Object.keys(update).length > 0) {
                 let query = `UPDATE ${this.modelName} SET`;
                 const updateNext = () => {
                     let updateString = "";
@@ -268,19 +266,21 @@ class Model {
                     return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
-                            callback(null);
+                            callback(null, update);
                         else
-                            return true;
+                            return update;
                     })
                         .catch((err) => {
                         throw err;
                     });
                 });
             }
-            else if (!id)
-                throw "ID isn't filled.";
-            else if (Object.keys(update).length === 0)
-                throw "Update fileds aren't filled.";
+            else {
+                if (callback)
+                    callback(null, update);
+                else
+                    return update;
+            }
         }
         catch (err) {
             if (callback)
@@ -289,32 +289,30 @@ class Model {
                 throw err;
         }
     }
-    findAndDelete(conditions, callback) {
+    delete(conditions, callback) {
         try {
             let filterFileds = getConditions(conditions);
             if (filterFileds.trim() !== "") {
                 let query = `DELETE FROM ${this.modelName} ${filterFileds}`;
-                const deleteNext = () => {
-                };
-                if (this.schema.methods.delete)
-                    this.schema.methods.delete({}, deleteNext);
-                else
-                    deleteNext();
                 return this.checkDb(() => {
                     return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
                             callback(null);
                         else
-                            return true;
+                            return undefined;
                     })
                         .catch((err) => {
                         throw err;
                     });
                 });
             }
-            else
-                throw "Filter fileds aren't filled.";
+            else {
+                if (callback)
+                    callback(null);
+                else
+                    return undefined;
+            }
         }
         catch (err) {
             if (callback)
@@ -323,31 +321,29 @@ class Model {
                 throw err;
         }
     }
-    findByIdAndDelete(id, callback) {
+    deleteById(id, callback) {
         try {
-            if (id) {
+            if (id && typeof id === 'string') {
                 let query = `DELETE FROM ${this.modelName} WHERE _id = ${mysql_1.default.escape(id)}`;
-                const deleteNext = () => {
-                };
-                if (this.schema.methods.delete)
-                    this.schema.methods.delete({}, deleteNext);
-                else
-                    deleteNext();
                 return this.checkDb(() => {
                     return mysql_1.default.execute(query, this.db.db)
                         .then(() => {
                         if (callback)
                             callback(null);
                         else
-                            return true;
+                            return undefined;
                     })
                         .catch((err) => {
                         throw err;
                     });
                 });
             }
-            else
-                throw "ID isn't filled.";
+            else {
+                if (callback)
+                    callback(null);
+                else
+                    return undefined;
+            }
         }
         catch (err) {
             if (callback)
