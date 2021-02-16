@@ -24,9 +24,14 @@ class Connection {
      * @returns The compiled model
      */
     model(name, schema) {
-        let model = new Model_1.default(name, schema, this);
-        this.models[name] = model;
-        return model;
+        if (!this.models[name]) {
+            let model = new Model_1.default(name, schema, this);
+            this.models[name] = model;
+            return model;
+        }
+        else {
+            throw `The model '${name}' already exists`;
+        }
     }
     modelNames() {
         return Object.keys(this.models);

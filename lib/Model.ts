@@ -1,5 +1,5 @@
 import mysql from './mysql';
-import Document from './Document';
+import Document, {WithOptions} from './Document';
 import DocumentQuery from './DocumentQuery';
 import Schema from './Schema';
 import Connection from './Connection';
@@ -125,26 +125,26 @@ interface IModel<T extends Document>{
     insertMany(params: object[]): Promise<Document[]>;
     insertMany(params: object[], callback: (err: any, res?: Document[])=> void): void;
 
-    update(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
-    update(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
+    updateOne(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
+    updateOne(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
 
-    updateById(id: string, update: any): Promise<any>;
-    updateById(id: string, update: any, callback: (err: any, raw?: any)=> void): void;
+    updateMany(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
+    updateMany(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
 
-    delete(conditions: RootQuerySelector | FilterQuery): Promise<void>;
-    delete(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
+    deleteOne(conditions: RootQuerySelector | FilterQuery): Promise<void>;
+    deleteOne(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
 
-    deleteById(id: string): Promise<void>;
-    deleteById(id: string, callback: (err: any)=> void): void;
+    deleteMany(conditions: RootQuerySelector | FilterQuery): Promise<void>;
+    deleteMany(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
 
-    // findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
-    // findAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document)=> void): void;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document)=> void): void;
 
     // findByIdAndUpdate(id: string, update: any): Promise<Document>;
     // findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document)=> void): void;
 
-    // findAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<Document>;
-    // findAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document)=> void): void;
+    // findOneAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<Document>;
+    // findOneAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document)=> void): void;
 
     // findByIdAndDelete(id: string): Promise<Document>;
     // findByIdAndDelete(id: string, callback: (err: any, res?: Document)=> void): void;
@@ -273,7 +273,7 @@ class Model<T extends Document> implements IModel<T>{
 
                 docs.forEach((row, i)=>{
                     keys.forEach((key, j)=>{
-                        let value = mysql.escape(row[key]);
+                        let value = mysql.escape(WithOptions(row[key], this.schema.obj[key]));
         
                         if(i === 0)
                             cols += `${key}${j !== keys.length - 1?', ':''}`;
@@ -310,9 +310,72 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    update(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>
-    update(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void
-    update(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, raw?: any)=> void){
+    updateOne(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>
+    updateOne(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void
+    updateOne(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, raw?: any)=> void){
+        try{
+            if(Object.keys(update).length > 0){
+                let query = `UPDATE ${this.modelName} SET`;
+                    
+                const updateNext = () =>{
+                    let updateString = "";
+
+                    Object.keys(this.schema.obj).forEach((key)=>{
+                        if(key !== '_id'){
+                            let value = update[key];
+
+                            if(this.schema.options.timestamps && key === '_updatedAt')
+                                value = new Date();
+        
+                            if(value){
+                                value = mysql.escape(WithOptions(value, this.schema.obj[key]));
+
+                                updateString += `${key} = ${value}, `;
+                            }
+                        }
+                    });
+
+                    if(updateString.slice(-2) === ', ')
+                        updateString = updateString.slice(0, -2);
+
+                    query += ` ${updateString} ${getConditions(conditions)} LIMIT 1`;
+                }
+
+                if(this.schema.methods.update)
+                    this.schema.methods.update(update, updateNext);
+                else
+                    updateNext();
+
+                return this.checkDb(()=>{
+                    return mysql.execute(query, this.db.db)
+                        .then(()=>{
+                            if(callback)
+                                callback(null, update);
+                            else
+                                return update;
+                        })
+                        .catch((err: any)=>{
+                            throw err;
+                        });
+                });
+            }
+            else{
+                if(callback)
+                    callback(null, update);
+                else
+                    return update;
+            }
+        }catch(err){
+            if(callback)
+                callback(err);
+            else
+                throw err;
+        }
+    }
+
+    updateMany(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>
+    updateMany(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void
+    updateMany(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, raw?: any)=> void){
         try{
             let filterFileds = getConditions(conditions);
 
@@ -323,14 +386,14 @@ class Model<T extends Document> implements IModel<T>{
                     let updateString = "";
 
                     Object.keys(this.schema.obj).forEach((key)=>{
-                        if(key !== '_id' && key !== 'id'){
+                        if(key !== '_id'){
                             let value = update[key];
 
                             if(this.schema.options.timestamps && key === '_updatedAt')
                                 value = new Date();
         
                             if(value){
-                                value = mysql.escape(value);
+                                value = mysql.escape(WithOptions(value, this.schema.obj[key]));
 
                                 updateString += `${key} = ${value}, `;
                             }
@@ -374,61 +437,24 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    updateById(id: string, update: any): Promise<any>
-    updateById(id: string, update: any, callback: (err: any, raw?: any)=> void): void
-    updateById(id: string, update: any = {}, callback?: (err: any, raw?: any)=> void){
+    deleteOne(conditions?: RootQuerySelector | FilterQuery): Promise<void>
+    deleteOne(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void
+    deleteOne(conditions?: RootQuerySelector | FilterQuery, callback?: (err: any)=> void){
         try{
-            if(id && typeof id === 'string' && Object.keys(update).length > 0){
-                let query = `UPDATE ${this.modelName} SET`;
-                    
-                const updateNext = () =>{
-                    let updateString = "";
+            let query = `DELETE FROM ${this.modelName} ${getConditions(conditions)} LIMIT 1`;
 
-                    Object.keys(this.schema.obj).forEach((key)=>{
-                        if(key !== '_id' && key !== 'id'){
-                            let value = update[key];
-
-                            if(this.schema.options.timestamps && key === '_updatedAt')
-                                value = new Date();
-        
-                            if(value){
-                                value = mysql.escape(value);
-
-                                updateString += `${key} = ${value}, `;
-                            }
-                        }
+            return this.checkDb(()=>{
+                return mysql.execute(query, this.db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null);
+                        else
+                            return undefined;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
                     });
-
-                    if(updateString.slice(-2) === ', ')
-                        updateString = updateString.slice(0, -2);
-
-                    query += ` ${updateString} WHERE _id = ${mysql.escape(id)}`;
-                }
-
-                if(this.schema.methods.update)
-                    this.schema.methods.update(update, updateNext);
-                else
-                    updateNext();
-
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, update);
-                            else
-                                return update;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
-            }
-            else{
-                if(callback)
-                    callback(null, update);
-                else
-                    return update;
-            }
+            });
         }catch(err){
             if(callback)
                 callback(err);
@@ -437,9 +463,9 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    delete(conditions?: RootQuerySelector | FilterQuery): Promise<void>
-    delete(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void
-    delete(conditions?: RootQuerySelector | FilterQuery, callback?: (err: any)=> void){
+    deleteMany(conditions?: RootQuerySelector | FilterQuery): Promise<void>
+    deleteMany(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void
+    deleteMany(conditions?: RootQuerySelector | FilterQuery, callback?: (err: any)=> void){
         try{
             let filterFileds = getConditions(conditions);
 
@@ -459,40 +485,6 @@ class Model<T extends Document> implements IModel<T>{
                         });
                 });
             }else{
-                if(callback)
-                    callback(null);
-                else
-                    return undefined;
-            }
-        }catch(err){
-            if(callback)
-                callback(err);
-            else
-                throw err;
-        }
-    }
-
-    deleteById(id: string): Promise<void>
-    deleteById(id: string, callback: (err: any)=> void): void
-    deleteById(id: string, callback?: (err: any)=> void){
-        try{
-            if(id && typeof id === 'string'){
-                let query = `DELETE FROM ${this.modelName} WHERE _id = ${mysql.escape(id)}`;
-
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null);
-                            else
-                                return undefined;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
-            }
-            else{
                 if(callback)
                     callback(null);
                 else
