@@ -91,7 +91,7 @@ MyModel.find({}).exec(function (err, docs) {
 });
 ```
 
-You can also `findOne`, `findById`, `update`, etc.
+You can also `findOne`, `findById`, `updateOne`, etc.
 ```js
 const instance = await MyModel.findOne({ ... }).exec();
 console.log(instance.key);  // 'hello'
