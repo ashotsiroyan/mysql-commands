@@ -3,7 +3,7 @@ import Model from './Model';
 declare type SortType = {
     [field: string]: -1 | 1;
 };
-declare class DocumentQuery<T, DocType extends Document> {
+export declare class DocumentQuery<T, DocType extends Document> {
     private mainQuery;
     private skipQuery;
     private sortQuery;
@@ -18,4 +18,9 @@ declare class DocumentQuery<T, DocType extends Document> {
     exec(callback: (err: any, res?: T) => void): void;
     private checkDb;
 }
-export default DocumentQuery;
+export declare class Query {
+    readonly model: Model<any>;
+    constructor(model: Model<any>);
+    update(doc: any): string;
+}
+export {};
