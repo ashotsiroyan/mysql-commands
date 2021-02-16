@@ -3,8 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Query = exports.DocumentQuery = void 0;
 const mysql_1 = __importDefault(require("./mysql"));
 const Document_1 = __importDefault(require("./Document"));
+const functions_1 = require("./plugins/functions");
 class DocumentQuery {
     constructor(query, model, isOne) {
         this.mainQuery = "";
@@ -79,4 +81,24 @@ class DocumentQuery {
         });
     }
 }
-exports.default = DocumentQuery;
+exports.DocumentQuery = DocumentQuery;
+class Query {
+    constructor(model) {
+        this.model = model;
+    }
+    update(doc) {
+        let query = `UPDATE ${this.model.modelName} SET `;
+        Object.keys(doc).forEach((key) => {
+            let value = functions_1.withOptions(doc[key], this.model.schema.obj[key]);
+            doc[key] = value;
+            value = mysql_1.default.escape(functions_1.withOptions(value, this.model.schema.obj[key]));
+            query += `${key} = ${value}, `;
+        });
+        if (this.model.schema.options.timestamps)
+            query += `_updatedAt = ${mysql_1.default.escape(new Date())}, `;
+        if (query.slice(-2) === ', ')
+            query = query.slice(0, -2);
+        return query;
+    }
+}
+exports.Query = Query;

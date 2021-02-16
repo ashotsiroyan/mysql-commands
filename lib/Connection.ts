@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import Schema from './Schema';
 import Model from './Model';
 
+
 export type ConnectionParams = {
     host: string;
     user: string;

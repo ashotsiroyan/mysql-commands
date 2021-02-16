@@ -5,7 +5,7 @@ interface ISingleton {
     connections: Connection[];
     connect: (props: any) => Connection;
     createConnection: (props: any) => Connection;
-    escape: (value: string) => any;
+    escape: (value: any) => any;
     format: (sql: string, values?: any) => any;
     execute: (sql: string, db?: mysql.Pool) => any;
     query: (sql: string, db?: mysql.Pool) => any;

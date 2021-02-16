@@ -1,8 +1,9 @@
-import Connection from './Connection';
 import mysql from './mysql';
-import ObjectId from './plugins/ObjectId';
-
+import Connection from './Connection';
 import Schema, {SchemaDefinition} from './Schema';
+import ObjectId from './plugins/ObjectId';
+import {withOptions} from './plugins/functions';
+
 
 interface DocumentParams{
     schema: Schema;
@@ -12,32 +13,15 @@ interface DocumentParams{
     doc: object;
 }
 
-export function WithOptions(value: any, options: any){
-    if(typeof value === 'string' && typeof options !== 'string'){
-        let def = (options as SchemaDefinition);
-
-        if(def.lowercase)
-            value = value.toLowerCase();
-
-        if(def.uppercase)
-            value = value.toUpperCase();
-
-        if(def.trim)
-            value = value.trim();
-    }
-
-    return value;
-}
-
 interface IDocument{
-    remove(): Document | Promise<Document>;
-    remove(callback: (err: any, res?: Document)=> void): void;
-
     update(doc: any): Promise<Document>;
     update(doc: any, callback: (err: any, res?: Document)=> void): void;
 
     save(): Document | Promise<Document>;
     save(callback: (err: any, res?: Document)=> void): void;
+
+    remove(): Document | Promise<Document>;
+    remove(callback: (err: any, res?: Document)=> void): void;
 }
 
 class Document implements IDocument{
@@ -87,12 +71,12 @@ class Document implements IDocument{
                         value = new Date();
 
                     if(value){
-                        value = mysql.escape(WithOptions(value, this.#schema.obj[key]));
+                        value = mysql.escape(withOptions(value, this.#schema.obj[key]));
         
                         if(this.isNew){
                             cols += `${key}, `;
                             values += `${value}, `;
-                        }else if(key !== '_id'){
+                        }else{
                             updateString += `${key} = ${value}, `;
                         }
                     }
@@ -148,35 +132,28 @@ class Document implements IDocument{
     update(doc: any, callback: (err: any, res?: Document)=> void): void;
     update(doc: any = {}, callback?: (err: any, res?: Document)=> void){
         try{
-            if(Object.keys(doc).length > 0){
-                let query = `UPDATE ${this.modelName} SET`;
+            let keys = Object.keys(doc);
 
-                const updateNext = () =>{
-                    let keys = Object.keys(this.#schema.obj),
-                        updateString = "";
-    
+            if(keys.length > 0){
+                let query = `UPDATE ${this.modelName} SET `;
+
+                const updateNext = () =>{    
                     keys.forEach((key)=>{
-                        if(doc[key])
-                            this[key] = doc[key];
-
-                        let value = this[key];
+                        let value = withOptions(doc[key], this.#schema.obj[key]);
+                        this[key] = value;
     
-                        if(this.#schema.options.timestamps && key === '_updatedAt')
-                            value = new Date();
-    
-                        if(value){
-                            value = mysql.escape(WithOptions(value, this.#schema.obj[key]));
+                        value = mysql.escape(value);
 
-                            if(key !== '_id'){
-                                updateString += `${key} = ${value}, `;
-                            }
-                        }
+                        query += `${key} = ${value}, `;
                     });
+
+                    if(this.#schema.options.timestamps)
+                        query += `_updatedAt = ${mysql.escape(new Date())}, `;
                     
-                    if(updateString.slice(-2) === ', ')
-                        updateString = updateString.slice(0, -2);
+                    if(query.slice(-2) === ', ')
+                        query = query.slice(0, -2);
     
-                    query += ` ${updateString} WHERE _id = ${mysql.escape(this['_id'])}`;
+                    query += ` WHERE _id = ${mysql.escape(this['_id'])}`;
                 }
     
 
@@ -264,9 +241,9 @@ class Document implements IDocument{
                 }
 
                 if(doc[key])
-                    value = WithOptions(doc[key], this.#schema.obj[key]);
+                    value = withOptions(doc[key], this.#schema.obj[key]);
                 else if(defaultValue)
-                    value = WithOptions(defaultValue, this.#schema.obj[key]);
+                    value = withOptions(defaultValue, this.#schema.obj[key]);
                 
                 if(hasId && key === '_id')
                     value = ObjectId();

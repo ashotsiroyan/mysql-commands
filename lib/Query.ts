@@ -1,27 +1,27 @@
 import mysql from './mysql';
 import Document from './Document';
-import {DocProps} from './Model';
+import Model from './Model';
+import {withOptions} from './plugins/functions';
 
 
 type SortType = {
     [field: string]: -1 | 1
 }
 
-type FnName = 'find' | 'findOne' | 'findById';
-
-class DocumentQuery<T, DocType extends Document>{
+export class DocumentQuery<T, DocType extends Document>{
     private mainQuery: string = "";
     private skipQuery: string = "";
     private sortQuery: any = "";
     private limitQuery: string = "";
+    private isOne: boolean;
 
-    private docProps: DocProps;
-    private fnName: FnName;
+    public readonly model: Model<DocType>;
 
-    constructor(query: string, docProps: DocProps, fnName: FnName){
+    constructor(query: string, model: Model<DocType>, isOne?: boolean){
         this.mainQuery = query;
-        this.docProps = docProps;
-        this.fnName = fnName;
+        this.isOne = isOne?isOne:false;
+
+        this.model = model;
     }
 
     limit(val: number | string){
@@ -55,31 +55,26 @@ class DocumentQuery<T, DocType extends Document>{
     }
 
     exec(): Promise<T>
-    exec(callback: (err: any, res?: T)=>void): void
-    exec(callback?: (err: any, res?: T)=>void){
+    exec(callback: (err: any, res?: T)=> void): void
+    exec(callback?: (err: any, res?: T)=> void){
         let {mainQuery, limitQuery, sortQuery, skipQuery} = this;
 
         try{
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
             return this.checkDb(()=>{
-                return mysql.execute(query, this.docProps.db.db)
+                return mysql.execute(query, this.model.db.db)
                     .then(([rows]: any[])=>{
-                        mainQuery = "";
-                        limitQuery = "";
-                        sortQuery = "";
-                        skipQuery = "";
-
                         rows = rows.map((row: any)=>{
                             return new Document({
                                 doc: row,
-                                ...this.docProps
+                                ...this.model
                             });
                         });
 
                         let res: T;
 
-                        if(this.fnName === 'find')
+                        if(!this.isOne)
                             res = rows;
                         else
                             res = rows[0]?rows[0]:null
@@ -94,11 +89,6 @@ class DocumentQuery<T, DocType extends Document>{
                     });
             });
         }catch(err){
-            mainQuery = "";
-            limitQuery = "";
-            sortQuery = "";
-            skipQuery = "";
-
             if(callback)
                 callback(err);
             else
@@ -107,7 +97,7 @@ class DocumentQuery<T, DocType extends Document>{
     }
 
     private checkDb( next: ()=> any ){
-        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.docProps.modelName} (${this.docProps.schema.query})`)
+        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.model.modelName} (${this.model.schema.query})`)
             .then(()=>{
                 return next();
             })
@@ -117,4 +107,31 @@ class DocumentQuery<T, DocType extends Document>{
     }
 }
 
-export default DocumentQuery;
+export class Query{
+    public readonly model: Model<any>;
+
+    constructor(model: Model<any>){
+        this.model = model;
+    }
+
+    update(doc: any){
+        let query = `UPDATE ${this.model.modelName} SET `;
+
+        Object.keys(doc).forEach((key)=>{
+            let value = withOptions(doc[key], this.model.schema.obj[key]);
+            doc[key] = value;
+
+            value = mysql.escape(withOptions(value, this.model.schema.obj[key]));
+
+            query += `${key} = ${value}, `;
+        });
+
+        if(this.model.schema.options.timestamps)
+            query += `_updatedAt = ${mysql.escape(new Date())}, `;
+
+        if(query.slice(-2) === ', ')
+            query = query.slice(0, -2);
+
+        return query;
+    }
+}

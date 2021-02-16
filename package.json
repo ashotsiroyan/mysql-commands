@@ -1,6 +1,6 @@
 {
   "name": "@ashotsiroyan/sqltool",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "MySQL object modeling tool designed to work in an asynchronous environment.",
   "repository": {
     "type": "git",

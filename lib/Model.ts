@@ -1,75 +1,12 @@
 import mysql from './mysql';
-import Document, {WithOptions} from './Document';
-import DocumentQuery from './DocumentQuery';
+import Document from './Document';
+import {DocumentQuery, Query} from './Query';
 import Schema from './Schema';
 import Connection from './Connection';
+import {getConditions, getFileds, withOptions} from './plugins/functions';
 
 
-function getConditions(arg?: RootQuerySelector | FilterQuery) {
-    let filterFileds = "";
-
-    const closer = ({params, prevField = null}: any) =>{
-        if(params){
-            Object.keys(params).forEach((field, i)=>{
-                if(typeof params[field] === 'object'){
-                    if(field === '$or' || field === '$and'){
-                        params[field].forEach((option: any, j: number)=>{
-                            filterFileds += "(";
-                            closer({params: option});
-                            if(filterFileds.slice(-5) === ' AND ')
-                                filterFileds = filterFileds.slice(0, -5);
-
-                            filterFileds += `)${j !== params[field].length - 1?` ${field === '$or'?"OR": "AND"} `:""}`;
-                        });
-                    }else{
-                        if(!Array.isArray(params[field])){
-                            closer({params: params[field], prevField: field});
-                        }
-                        else if(field === '$in' || field === '$nin'){
-                            params[field].forEach((value: any)=>{
-                                filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)} OR `;
-                            });
-                        }
-                    }
-                }else{
-                    let value = params[field];
-
-                    if(field[0] === '$'){
-                        filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
-                    }else{
-                        filterFileds += `${field} = ${mysql.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
-                    }
-                }
-            });
-        }
-    }
-
-    closer({params: arg});
-
-    if(filterFileds.slice(-5) === ' AND ')
-        filterFileds = filterFileds.slice(0, -5);
-
-    if(filterFileds.slice(-4) === ' OR ')
-        filterFileds = filterFileds.slice(0, -4);
-
-    if(filterFileds.trim() !== "")
-        filterFileds = "WHERE " + filterFileds;
-
-    return filterFileds;
-}
-
-function getFileds(arg?: string[]){
-    let showFileds = arg && arg.length > 0?"":"*";
-
-    if(arg && arg.length > 0)
-        arg.forEach((field: string, i: number)=>{
-            showFileds += `${field}${i !== arg.length - 1?', ':''}`;
-        });
-
-    return showFileds;
-}
-
-type QuerySelector = {
+export type QuerySelector = {
     $eq?: any;
     $gt?: any;
     $gte?: any;
@@ -80,50 +17,34 @@ type QuerySelector = {
     $nin?: string | string[] | number | number[];
 }
 
-const selectorActions: QuerySelector = {
-    $lt: '<',
-    $gt: '>',
-    $lte: '<=',
-    $gte: '>=',
-    $eq: '=',
-    $ne: '!=',
-    $in: 'LIKE',
-    $nin: 'NOT LIKE'
-}
-
-type RootQuerySelector = {
+export type RootQuerySelector = {
     _id?: string;
     $or?: Array<FilterQuery>;
     $and?: Array<FilterQuery>;
 }
 
-type FilterQuery = {
+export type FilterQuery = {
     [field: string]: QuerySelector | string | number;
 }
 
-export interface DocProps{
-    schema: Schema;
-    db: Connection;
-    modelName: string;
-}
 
 interface IModel<T extends Document>{
-    new: (doc?: any)=> Document;
+    new: (doc?: any)=> T;
 
     find(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T[], T>;
-    find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document[])=> void): DocumentQuery<T[], T>;
+    find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T[])=> void): DocumentQuery<T[], T>;
 
     findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T | null, T>;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T)=> void): DocumentQuery<T | null, T>;
 
     findById(id: string, fields?: string[]): DocumentQuery<T | null, T>;
-    findById(id: string, fields: string[], callback: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>;
+    findById(id: string, fields: string[], callback: (err: any, res?: T)=> void): DocumentQuery<T | null, T>;
 
-    insertOne(params: object): Promise<Document>;
-    insertOne(params: object, callback: (err: any, res?: Document)=> void): void;
+    insertOne(params: object): Promise<T>;
+    insertOne(params: object, callback: (err: any, res?: T)=> void): void;
 
-    insertMany(params: object[]): Promise<Document[]>;
-    insertMany(params: object[], callback: (err: any, res?: Document[])=> void): void;
+    insertMany(params: object[]): Promise<T[]>;
+    insertMany(params: object[], callback: (err: any, res?: T[])=> void): void;
 
     updateOne(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
     updateOne(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
@@ -137,53 +58,46 @@ interface IModel<T extends Document>{
     deleteMany(conditions: RootQuerySelector | FilterQuery): Promise<void>;
     deleteMany(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
 
-    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<Document>;
-    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: Document)=> void): void;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<T>;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: T)=> void): void;
 
-    // findByIdAndUpdate(id: string, update: any): Promise<Document>;
-    // findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: Document)=> void): void;
+    // findByIdAndUpdate(id: string, update: any): Promise<T>;
+    // findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: T)=> void): void;
 
-    // findOneAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<Document>;
-    // findOneAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: Document)=> void): void;
+    // findOneAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<T>;
+    // findOneAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: T)=> void): void;
 
-    // findByIdAndDelete(id: string): Promise<Document>;
-    // findByIdAndDelete(id: string, callback: (err: any, res?: Document)=> void): void;
+    // findByIdAndDelete(id: string): Promise<T>;
+    // findByIdAndDelete(id: string, callback: (err: any, res?: T)=> void): void;
 
     countDocuments(conditions: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number)=> void): void;
 }
 
 class Model<T extends Document> implements IModel<T>{
-    private docProps: DocProps;
     public readonly schema: Schema;
     public readonly db: Connection;
+    public readonly modelName: string;
 
     constructor(name: string, schema: Schema, db: Connection){
         this.schema = schema;
         this.db = db;
-
-        this.docProps = {
-            schema: this.schema,
-            db: this.db,
-            modelName: name
-        }
-    }
-
-    get modelName(){
-        return this.docProps.modelName;
+        this.modelName = name;
     }
 
     new(doc?: any){
         return new Document({
             doc,
-            ...this.docProps,
+            schema: this.schema,
+            db: this.db,
+            modelName: this.modelName,
             isNew: true
-        });
+        }) as T;
     }
 
-    find(callback?: (err: any, res?: Document[])=> void): DocumentQuery<T[], T>
-    find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document[])=> void): DocumentQuery<T[], T>
-    find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document[])=> void): DocumentQuery<T[], T>
+    find(callback?: (err: any, res?: T[])=> void): DocumentQuery<T[], T>
+    find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T[])=> void): DocumentQuery<T[], T>
+    find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T[])=> void): DocumentQuery<T[], T>
     find(conditions?: any, fields?: any, callback?: any){
         if (typeof conditions === 'function') {
             callback = conditions;
@@ -194,7 +108,7 @@ class Model<T extends Document> implements IModel<T>{
             fields = null;
         }
 
-        const query = new DocumentQuery<T[], T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} ${getConditions(conditions)}`, this.docProps, 'find');
+        const query = new DocumentQuery<T[], T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} ${getConditions(conditions)}`, this);
 
         if(callback)
             query.exec(callback);
@@ -202,9 +116,9 @@ class Model<T extends Document> implements IModel<T>{
         return query;
     }
 
-    findOne(callback?: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>
-    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>
-    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>
+    findOne(callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
+    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
+    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
     findOne(conditions?: any, fields?: any, callback?: any){
         if (typeof conditions === 'function') {
             callback = conditions;
@@ -215,7 +129,7 @@ class Model<T extends Document> implements IModel<T>{
             fields = null;
         }
 
-        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} ${getConditions(conditions)} LIMIT 1`, this.docProps, 'findOne');
+        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} ${getConditions(conditions)} LIMIT 1`, this, true);
 
         if(callback)
             query.exec(callback);
@@ -223,15 +137,15 @@ class Model<T extends Document> implements IModel<T>{
         return query;
     }
 
-    findById(id: string, callback?: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>
-    findById(id: string, fields?: string[], callback?: (err: any, res?: Document)=> void): DocumentQuery<T | null, T>
+    findById(id: string, callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
+    findById(id: string, fields?: string[], callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
     findById(id: any, fields?: any, callback?: any){
         if (typeof fields === 'function') {
             callback = fields;
             fields = null;
         }
 
-        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} WHERE _id = ${mysql.escape(id)} LIMIT 1`, this.docProps, 'findById');
+        const query = new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} WHERE _id = ${mysql.escape(id)} LIMIT 1`, this, true);
 
         if(callback)
             query.exec(callback);
@@ -239,7 +153,7 @@ class Model<T extends Document> implements IModel<T>{
         return query;
     }
 
-    insertOne(params: object): Promise<Document>
+    insertOne(params: object): Promise<T>
     insertOne(params: object, callback: (err: any, res?: Document)=> void): void
     insertOne(params: object = {}, callback?: (err: any, res?: Document)=> void){
         try{
@@ -257,12 +171,12 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    insertMany(params: object[]): Promise<Document[]>
-    insertMany(params: object[], callback: (err: any, res?: Document[])=> void): void
-    insertMany(params: object[] = [], callback?: (err: any, res?: Document[])=> void){
+    insertMany(params: object[]): Promise<T[]>
+    insertMany(params: object[], callback: (err: any, res?: T[])=> void): void
+    insertMany(params: object[] = [], callback?: (err: any, res?: T[])=> void){
         try{
             let query = "INSERT INTO " + this.modelName,
-                docs: Document[] = params.map((doc)=>{
+                docs: T[] = params.map((doc)=>{
                     return this.new(doc);
                 });
 
@@ -273,7 +187,7 @@ class Model<T extends Document> implements IModel<T>{
 
                 docs.forEach((row, i)=>{
                     keys.forEach((key, j)=>{
-                        let value = mysql.escape(WithOptions(row[key], this.schema.obj[key]));
+                        let value = mysql.escape(withOptions(row[key], this.schema.obj[key]));
         
                         if(i === 0)
                             cols += `${key}${j !== keys.length - 1?', ':''}`;
@@ -310,39 +224,19 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, raw?: any)=> void){
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any): Promise<any>
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any, callback: (err: any, raw?: any)=> void): void
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any = {}, callback?: (err: any, raw?: any)=> void){
         try{
-            if(Object.keys(update).length > 0){
-                let query = `UPDATE ${this.modelName} SET`;
+            if(Object.keys(doc).length > 0){
+                let query: string;
                     
                 const updateNext = () =>{
-                    let updateString = "";
-
-                    Object.keys(this.schema.obj).forEach((key)=>{
-                        if(key !== '_id'){
-                            let value = update[key];
-
-                            if(this.schema.options.timestamps && key === '_updatedAt')
-                                value = new Date();
-        
-                            if(value){
-                                value = mysql.escape(WithOptions(value, this.schema.obj[key]));
-
-                                updateString += `${key} = ${value}, `;
-                            }
-                        }
-                    });
-
-                    if(updateString.slice(-2) === ', ')
-                        updateString = updateString.slice(0, -2);
-
-                    query += ` ${updateString} ${getConditions(conditions)} LIMIT 1`;
+                    query = `${new Query(this).update(doc)} ${getConditions(conditions)} LIMIT 1`;
                 }
 
                 if(this.schema.methods.update)
-                    this.schema.methods.update(update, updateNext);
+                    this.schema.methods.update(doc, updateNext);
                 else
                     updateNext();
 
@@ -350,9 +244,9 @@ class Model<T extends Document> implements IModel<T>{
                     return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
-                                callback(null, update);
+                                callback(null, doc);
                             else
-                                return update;
+                                return doc;
                         })
                         .catch((err: any)=>{
                             throw err;
@@ -361,9 +255,9 @@ class Model<T extends Document> implements IModel<T>{
             }
             else{
                 if(callback)
-                    callback(null, update);
+                    callback(null, doc);
                 else
-                    return update;
+                    return doc;
             }
         }catch(err){
             if(callback)
@@ -373,41 +267,21 @@ class Model<T extends Document> implements IModel<T>{
         }
     }
 
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any = {}, callback?: (err: any, raw?: any)=> void){
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any): Promise<any>
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any, callback: (err: any, raw?: any)=> void): void
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any = {}, callback?: (err: any, raw?: any)=> void){
         try{
             let filterFileds = getConditions(conditions);
 
-            if(filterFileds.trim() !== "" && Object.keys(update).length > 0){
-                let query = `UPDATE ${this.modelName} SET`;
+            if(filterFileds.trim() !== "" && Object.keys(doc).length > 0){
+                let query: string;
                     
                 const updateNext = () =>{
-                    let updateString = "";
-
-                    Object.keys(this.schema.obj).forEach((key)=>{
-                        if(key !== '_id'){
-                            let value = update[key];
-
-                            if(this.schema.options.timestamps && key === '_updatedAt')
-                                value = new Date();
-        
-                            if(value){
-                                value = mysql.escape(WithOptions(value, this.schema.obj[key]));
-
-                                updateString += `${key} = ${value}, `;
-                            }
-                        }
-                    });
-
-                    if(updateString.slice(-2) === ', ')
-                        updateString = updateString.slice(0, -2);
-    
-                    query += ` ${updateString} ${filterFileds}`;
+                    query = `${new Query(this).update(doc)} ${filterFileds}`;
                 }
 
                 if(this.schema.methods.update)
-                    this.schema.methods.update(update, updateNext);
+                    this.schema.methods.update(doc, updateNext);
                 else
                     updateNext();
     
@@ -415,9 +289,9 @@ class Model<T extends Document> implements IModel<T>{
                     return mysql.execute(query, this.db.db)
                         .then(()=>{
                             if(callback)
-                                callback(null, update);
+                                callback(null, doc);
                             else
-                                return update;
+                                return doc;
                         })
                         .catch((err: any)=>{
                             throw err;
@@ -425,9 +299,9 @@ class Model<T extends Document> implements IModel<T>{
                 });
             }else{
                 if(callback)
-                    callback(null, update);
+                    callback(null, doc);
                 else
-                    return update;
+                    return doc;
             }
         }catch(err){
             if(callback)

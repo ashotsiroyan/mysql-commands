@@ -7,14 +7,13 @@ interface DocumentParams {
     isNew?: boolean;
     doc: object;
 }
-export declare function WithOptions(value: any, options: any): any;
 interface IDocument {
-    remove(): Document | Promise<Document>;
-    remove(callback: (err: any, res?: Document) => void): void;
     update(doc: any): Promise<Document>;
     update(doc: any, callback: (err: any, res?: Document) => void): void;
     save(): Document | Promise<Document>;
     save(callback: (err: any, res?: Document) => void): void;
+    remove(): Document | Promise<Document>;
+    remove(callback: (err: any, res?: Document) => void): void;
 }
 declare class Document implements IDocument {
     #private;
