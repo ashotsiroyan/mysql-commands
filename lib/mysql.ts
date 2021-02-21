@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 import Connection, {ConnectionParams} from './Connection';
 
 
-interface ISingleton {
+interface Imysql {
     connection: Connection;
     connections: Connection[];
     connect: (props: any) => Connection;
@@ -13,7 +13,7 @@ interface ISingleton {
     query: (sql: string, db?: mysql.Pool) => any;
 }
 
-var Singleton: ISingleton = (function() {
+var Singleton: Imysql = (function() {
     var connection: Connection = new Connection(),
         connections: Connection[] = [connection];
 

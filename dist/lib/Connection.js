@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const promise_1 = __importDefault(require("mysql2/promise"));
 const Model_1 = __importDefault(require("./Model"));
+const mysql_1 = __importDefault(require("./mysql"));
 class Connection {
     constructor(props) {
         this.models = {};
@@ -40,13 +41,45 @@ class Connection {
         delete this.models[model];
         return this;
     }
+    dropTable(name, callback) {
+        return mysql_1.default.execute(`DROP TABLE ${name}`, this.db)
+            .then(() => {
+            if (callback)
+                callback(null);
+            else
+                return undefined;
+        })
+            .catch((err) => {
+            if (callback)
+                callback(err);
+            else
+                throw err;
+        });
+    }
+    dropDatabase(callback) {
+        return mysql_1.default.execute(`DROP DATABASE ${this.name}`, this.db)
+            .then(() => {
+            if (callback)
+                callback(null);
+            else
+                return undefined;
+        })
+            .catch((err) => {
+            if (callback)
+                callback(err);
+            else
+                throw err;
+        });
+    }
     /** Closes the connection */
     close(callback) {
         if (this.db) {
-            this.db.end()
+            return this.db.end()
                 .then(() => {
                 if (callback)
                     callback(null);
+                else
+                    return undefined;
             })
                 .catch((err) => {
                 if (callback)
@@ -54,6 +87,12 @@ class Connection {
                 else
                     throw err;
             });
+        }
+        else {
+            if (callback)
+                callback(null);
+            else
+                return undefined;
         }
     }
 }

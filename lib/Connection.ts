@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import Schema from './Schema';
 import Model from './Model';
+import tool from './mysql';
 
 
 export type ConnectionParams = {
@@ -58,13 +59,47 @@ class Connection{
         return this;
     }
 
+    dropTable(name: string, callback?: (err: any) => void): Promise<void>{
+        return tool.execute(`DROP TABLE ${name}`, this.db)
+            .then(()=>{
+                if(callback)
+                    callback(null);
+                else
+                    return undefined;
+            })
+            .catch((err: any)=>{
+                if(callback)
+                    callback(err);
+                else
+                    throw err;
+            });
+    }
+
+    dropDatabase(callback?: (err: any) => void): Promise<void>{
+        return tool.execute(`DROP DATABASE ${this.name}`, this.db)
+            .then(()=>{
+                if(callback)
+                    callback(null);
+                else
+                    return undefined;
+            })
+            .catch((err: any)=>{
+                if(callback)
+                    callback(err);
+                else
+                    throw err;
+            });
+    }
+
     /** Closes the connection */
-    close(callback?: (err: any) => void){
+    close(callback?: (err: any) => void): Promise<void> | void{
         if(this.db){
-            this.db.end()
+            return this.db.end()
                 .then(()=>{
                     if(callback)
                         callback(null);
+                    else
+                        return undefined;
                 })
                 .catch((err)=>{
                     if(callback)
@@ -72,6 +107,11 @@ class Connection{
                     else
                         throw err;
                 });
+        }else{
+            if(callback)
+                callback(null);
+            else
+                return undefined;
         }
     }
 }

@@ -36,6 +36,9 @@ exports.connections = connections;
  * @returns The compiled model
  */
 function model(name, schema) {
-    return connection.model(name, schema);
+    if (!schema)
+        return connection.models[name];
+    else
+        return connection.model(name, schema);
 }
 exports.model = model;

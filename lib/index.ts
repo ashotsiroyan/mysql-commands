@@ -30,8 +30,11 @@ let connections = mysql.connections;
  * @param schema a schema. necessary when defining a model
  * @returns The compiled model
  */
-function model(name: string, schema: Schema){
-    return connection.model(name, schema);
+function model(name: string, schema?: Schema){
+    if(!schema)
+        return connection.models[name];
+    else
+        return connection.model(name, schema);
 }
 
 

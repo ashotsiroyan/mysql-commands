@@ -26,7 +26,9 @@ declare class Connection {
     model(name: string, schema: Schema): Model<import("./Document").default>;
     modelNames(): string[];
     deleteModel(model: string): this;
+    dropTable(name: string, callback?: (err: any) => void): Promise<void>;
+    dropDatabase(callback?: (err: any) => void): Promise<void>;
     /** Closes the connection */
-    close(callback?: (err: any) => void): void;
+    close(callback?: (err: any) => void): Promise<void> | void;
 }
 export default Connection;
