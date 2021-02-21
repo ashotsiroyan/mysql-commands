@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 import Connection from './Connection';
-interface ISingleton {
+interface Imysql {
     connection: Connection;
     connections: Connection[];
     connect: (props: any) => Connection;
@@ -10,5 +10,5 @@ interface ISingleton {
     execute: (sql: string, db?: mysql.Pool) => any;
     query: (sql: string, db?: mysql.Pool) => any;
 }
-declare var Singleton: ISingleton;
+declare var Singleton: Imysql;
 export default Singleton;
