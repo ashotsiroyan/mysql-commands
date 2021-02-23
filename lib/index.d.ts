@@ -23,5 +23,5 @@ declare let connections: import("./Connection").default[];
  * @param schema a schema. necessary when defining a model
  * @returns The compiled model
  */
-declare function model(name: string, schema?: Schema): import("./Model").default<any>;
+declare function model(name: string, schema?: Schema): import("./Model").default<import("./Document").default>;
 export { connect, createConnection, Schema, model, connection, connections };

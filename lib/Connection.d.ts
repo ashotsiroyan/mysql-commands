@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import Schema from './Schema';
+import Document from './Document';
 import Model from './Model';
 export declare type ConnectionParams = {
     host: string;
@@ -8,7 +9,7 @@ export declare type ConnectionParams = {
     database: string;
 };
 declare type ConnectionModel = {
-    [model: string]: Model<any>;
+    [model: string]: Model<Document>;
 };
 declare class Connection {
     name: string;
@@ -23,7 +24,7 @@ declare class Connection {
      * @param schema a schema. necessary when defining a model
      * @returns The compiled model
      */
-    model(name: string, schema: Schema): Model<import("./Document").default>;
+    model(name: string, schema: Schema): Model<Document>;
     modelNames(): string[];
     deleteModel(model: string): this;
     dropTable(name: string, callback?: (err: any) => void): Promise<void>;

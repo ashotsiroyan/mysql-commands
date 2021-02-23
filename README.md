@@ -29,7 +29,7 @@ sqltool.connect({
 
 Once connected, the `open` event is fired on the `Connection` instance. If you're using `sqltool.connect`, the `Connection` is `sqltool.connection`. Otherwise, `sqltool.createConnection` return value is a `Connection`.
 
-Important! SQLtool buffers all the commands until it's connected to the database. This means that you don't have to wait until it connects to MySQL in order to define models.
+**Important!** SQLtool buffers all the commands until it's connected to the database. This means that you don't have to wait until it connects to MySQL in order to define models.
 
 ### Defining a Model
 Models are defined through the Schema interface.
@@ -44,7 +44,7 @@ const BlogPost = new Schema({
   date: 'DATE'
 });
 ```
-or
+The following example with some features.
 
 ```js
 const Comment = new Schema({
@@ -100,7 +100,7 @@ const instance = await MyModel.findOne({ ... }).exec();
 console.log(instance.key);  // 'hello'
 ```
 
-Important! If you opened a separate connection using `sqltool.createConnection()` but attempt to access the model through `sqltool.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
+**Important!** If you opened a separate connection using `sqltool.createConnection()` but attempt to access the model through `sqltool.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
 ```js
 const conn = sqltool.createConnection({ conn_params });
 const MyModel = conn.model('ModelName', schema);
