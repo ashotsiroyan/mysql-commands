@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import Schema from './Schema';
+import Document from './Document';
 import Model from './Model';
 import tool from './mysql';
 
@@ -12,7 +13,7 @@ export type ConnectionParams = {
 }
 
 type ConnectionModel = {
-    [model: string]: Model<any>;
+    [model: string]: Model<Document>;
 }
 
 class Connection{
@@ -38,7 +39,7 @@ class Connection{
      * @param schema a schema. necessary when defining a model
      * @returns The compiled model
      */
-    model(name: string, schema: Schema){
+    model(name: string, schema: Schema): Model<Document>{
         if(!this.models[name]){
             let model = new Model(name, schema, this);
             this.models[name] = model;
