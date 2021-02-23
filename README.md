@@ -19,7 +19,7 @@ import sqltool from '@ashotsiroyan/sqltool';
 
 ### Connecting to MySQL
 ```js
-await sqltool.connect({
+sqltool.connect({
     host: 'localhost',
     user: 'root',
     password: '',
@@ -48,11 +48,14 @@ or
 
 ```js
 const Comment = new Schema({
-  name: { type: 'VARCHAR', default: 'hahaha', size: 32 },
-  age: { type: 'INT', index: true },
+  name: { type: 'VARCHAR', size: 32, default: 'hahaha' },
+  age: { type: 'INT', unsigned: true },
   bio: { type: 'VARCHAR' },
   date: { type: 'DATE', default: new Date() }
 });
+
+// create index
+Comment.index({name: 'text', bio: 'text'});
 
 // middleware
 Comment.pre('save', function (params, next) {
@@ -77,7 +80,7 @@ The first argument is the singular name of the table your model is for.
 
 Once we have our model, we can then instantiate it, and save it:
 ```js
-const instance = new MyModel();
+const instance = MyModel.new();
 instance.key = 'hello';
 instance.save(function (err) {
   //
@@ -101,7 +104,7 @@ Important! If you opened a separate connection using `sqltool.createConnection()
 ```js
 const conn = sqltool.createConnection({ conn_params });
 const MyModel = conn.model('ModelName', schema);
-const m = new MyModel;
+const m = MyModel.new();
 m.save(); // works
 ```
 
@@ -110,6 +113,6 @@ vs
 ```js
 const conn = sqltool.createConnection({ conn_params });
 const MyModel = sqltool.model('ModelName', schema);
-const m = new MyModel;
+const m = MyModel.new();
 m.save(); // does not work b/c the default connection object was never connected
 ```
