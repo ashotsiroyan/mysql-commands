@@ -1,8 +1,6 @@
 # SQLtool
 SQLtool is a MySQL object modeling tool designed to work in an asynchronous environment. SQLtool supports both promises and callbacks.
 
-[![npm](https://nodei.co/npm/mongoose.png)](https://www.npmjs.com/package/@ashotsiroyan/sqltool)
-
 ## Installation
 ```
 $ npm install @ashotsiroyan/sqltool
