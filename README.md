@@ -1,6 +1,8 @@
 # SQLtool
 SQLtool is a MySQL object modeling tool designed to work in an asynchronous environment. SQLtool supports both promises and callbacks.
 
+[![npm](https://nodei.co/npm/mongoose.png)](https://www.npmjs.com/package/@ashotsiroyan/sqltool)
+
 ## Installation
 ```
 $ npm install @ashotsiroyan/sqltool
@@ -81,7 +83,16 @@ The first argument is the singular name of the table your model is for.
 Once we have our model, we can then instantiate it, and save it:
 ```js
 const instance = MyModel.new();
-instance.key = 'hello';
+instance.name = 'karen';
+instance.save(function (err) {
+  //
+});
+```
+
+or
+
+```js
+const instance = MyModel.new({ name: 'karen' });
 instance.save(function (err) {
   //
 });
@@ -89,15 +100,33 @@ instance.save(function (err) {
 
 We can find documents from the same table
 ```js
-MyModel.find({}).exec(function (err, docs) {
+// find all documents
+MyModel.find({ }).exec(function (err, docs) {
   // docs.forEach
 });
+
+// find all documents named karen and at least 19
+await MyModel.find({ name: 'karen', age: { $gte: 19 } }).exec();
+
+// executes, passing results to callback
+MyModel.find({ name: 'karen', age: { $gte: 19 } }).exec(function (err, docs) {
+  // docs.forEach
+});
+
+// executes, name LIKE karen and only selecting the "name" and "age" fields
+await MyModel.find({ name: { $in: 'karen' } }, ['name', 'age']).exec();
+
+// find first 3 documents
+await MyModel.find({ }).limit(3).exec();
+
+// find 3 documents skipping 4
+await MyModel.find({ }).limit(3).skip(4).exec();
 ```
 
 You can also `findOne`, `findById`, `updateOne`, etc.
 ```js
 const instance = await MyModel.findOne({ ... }).exec();
-console.log(instance.key);  // 'hello'
+console.log(instance.name);  // 'karen'
 ```
 
 **Important!** If you opened a separate connection using `sqltool.createConnection()` but attempt to access the model through `sqltool.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
