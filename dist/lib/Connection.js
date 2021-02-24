@@ -9,12 +9,12 @@ const mysql_1 = __importDefault(require("./mysql"));
 class Connection {
     constructor(props) {
         this.models = {};
-        this.name = props ? props.database : '';
+        this.name = props && props.database ? props.database : '';
         this.db = props ? promise_1.default.createPool(props) : undefined;
     }
     /**  Switches to a different database using the same connection pool. */
     useDb(props) {
-        this.name = props.database;
+        this.name = props.database ? props.database : '';
         this.db = promise_1.default.createPool(props);
         return this;
     }
