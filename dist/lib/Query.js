@@ -89,10 +89,13 @@ class Query {
     update(doc) {
         let query = `UPDATE ${this.model.modelName} SET `;
         Object.keys(doc).forEach((key) => {
-            let value = functions_1.withOptions(doc[key], this.model.schema.obj[key]);
-            doc[key] = value;
-            value = mysql_1.default.escape(functions_1.withOptions(value, this.model.schema.obj[key]));
-            query += `${key} = ${value}, `;
+            let options = this.model.schema.obj[key];
+            if (options) {
+                let value = functions_1.withOptions(doc[key], options);
+                doc[key] = value;
+                value = mysql_1.default.escape(functions_1.withOptions(value, options));
+                query += `${key} = ${value}, `;
+            }
         });
         if (this.model.schema.options.timestamps)
             query += `_updatedAt = ${mysql_1.default.escape(new Date())}, `;

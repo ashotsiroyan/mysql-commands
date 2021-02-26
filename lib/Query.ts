@@ -5,7 +5,7 @@ import {withOptions} from './plugins/functions';
 
 
 type SortType = {
-    [field: string]: -1 | 1
+    [field: string]: -1 | 1;
 }
 
 export class DocumentQuery<T, DocType extends Document>{
@@ -118,12 +118,16 @@ export class Query{
         let query = `UPDATE ${this.model.modelName} SET `;
 
         Object.keys(doc).forEach((key)=>{
-            let value = withOptions(doc[key], this.model.schema.obj[key]);
-            doc[key] = value;
+            let options = this.model.schema.obj[key];
 
-            value = mysql.escape(withOptions(value, this.model.schema.obj[key]));
-
-            query += `${key} = ${value}, `;
+            if(options){
+                let value = withOptions(doc[key], options);
+                doc[key] = value;
+    
+                value = mysql.escape(withOptions(value, options));
+    
+                query += `${key} = ${value}, `;
+            }
         });
 
         if(this.model.schema.options.timestamps)

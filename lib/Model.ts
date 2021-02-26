@@ -7,14 +7,29 @@ import {getConditions, getFileds, withOptions} from './plugins/functions';
 
 
 export type QuerySelector = {
+    /** equal */
     $eq?: any;
-    $gt?: any;
-    $gte?: any;
-    $in?: string | string[] | number | number[];
-    $lt?: any;
-    $lte?: any;
+    
+    /** not equal */
     $ne?: any;
+    
+    /** greater than */
+    $gt?: any;
+    
+    /** greater than or equal */
+    $gte?: any;
+    
+    /** like */
+    $in?: string | string[] | number | number[];
+    
+    /** not like */
     $nin?: string | string[] | number | number[];
+    
+    /** less than */
+    $lt?: any;
+    
+    /** less than or equal */
+    $lte?: any;
 }
 
 export type RootQuerySelector = {
@@ -35,10 +50,10 @@ interface IModel<T extends Document>{
     find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T[])=> void): DocumentQuery<T[], T>;
 
     findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T | null, T>;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T)=> void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>;
 
     findById(id: string, fields?: string[]): DocumentQuery<T | null, T>;
-    findById(id: string, fields: string[], callback: (err: any, res?: T)=> void): DocumentQuery<T | null, T>;
+    findById(id: string, fields: string[], callback: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>;
 
     insertOne(params: object): Promise<T>;
     insertOne(params: object, callback: (err: any, res?: T)=> void): void;
@@ -58,11 +73,11 @@ interface IModel<T extends Document>{
     deleteMany(conditions: RootQuerySelector | FilterQuery): Promise<void>;
     deleteMany(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
 
-    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<T>;
-    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res?: T)=> void): void;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<T | null>;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res: T | null)=> void): void;
 
-    // findByIdAndUpdate(id: string, update: any): Promise<T>;
-    // findByIdAndUpdate(id: string, update: any, callback: (err: any, res?: T)=> void): void;
+    // findByIdAndUpdate(id: string, update: any): Promise<T | null>;
+    // findByIdAndUpdate(id: string, update: any, callback: (err: any, res: T | null)=> void): void;
 
     // findOneAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<T>;
     // findOneAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: T)=> void): void;
@@ -116,9 +131,9 @@ class Model<T extends Document> implements IModel<T>{
         return query;
     }
 
-    findOne(callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
-    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
-    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
+    findOne(callback?: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>
+    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>
+    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>
     findOne(conditions?: any, fields?: any, callback?: any){
         if (typeof conditions === 'function') {
             callback = conditions;
@@ -137,8 +152,8 @@ class Model<T extends Document> implements IModel<T>{
         return query;
     }
 
-    findById(id: string, callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
-    findById(id: string, fields?: string[], callback?: (err: any, res?: T)=> void): DocumentQuery<T | null, T>
+    findById(id: string, callback?: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>
+    findById(id: string, fields?: string[], callback?: (err: any, res?: T | null)=> void): DocumentQuery<T | null, T>
     findById(id: any, fields?: any, callback?: any){
         if (typeof fields === 'function') {
             callback = fields;
@@ -371,6 +386,108 @@ class Model<T extends Document> implements IModel<T>{
                 throw err;
         }
     }
+
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<T | null>;
+    // findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res: T | null)=> void): void;
+    // async findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback?: (err: any, res: T | null)=> void){
+    //     try{
+    //         let doc = await this.findOne(conditions).exec();
+
+    //         if(doc && Object.keys(update).length > 0){
+    //             let query: string;
+                    
+    //             const updateNext = () =>{
+    //                 Object.keys(update).forEach((key)=>{
+    //                     if(this.schema.obj[key]){
+    //                         (doc as Document)[key] = update[key];
+    //                     }
+    //                 });
+
+    //                 query = `${new Query(this).update(update)} ${getConditions(conditions)} LIMIT 1`;
+    //             }
+
+    //             // if(this.schema.methods.findOneAndUpdate)
+    //             //     this.schema.methods.findOneAndUpdate(update, updateNext);
+    //             // else
+    //                 updateNext();
+
+    //             return this.checkDb(()=>{
+    //                 return mysql.execute(query, this.db.db)
+    //                     .then(()=>{
+    //                         if(callback)
+    //                             callback(null, doc);
+    //                         else
+    //                             return doc;
+    //                     })
+    //                     .catch((err: any)=>{
+    //                         throw err;
+    //                     });
+    //             });
+    //         }
+    //         else{
+    //             if(callback)
+    //                 callback(null, doc);
+    //             else
+    //                 return doc;
+    //         }
+    //     }catch(err){
+    //         if(callback)
+    //             callback(err, null);
+    //         else
+    //             throw err;
+    //     }
+    // }
+
+    // findByIdAndUpdate(id: string, update: any): Promise<T | null>;
+    // findByIdAndUpdate(id: string, update: any, callback: (err: any, res: T | null)=> void): void;
+    // async findByIdAndUpdate(id: string, update: any, callback?: (err: any, res: T | null)=> void){
+    //     try{
+    //         let doc = await this.findById(id).exec();
+
+    //         if(doc && Object.keys(update).length > 0){
+    //             let query: string;
+                    
+    //             const updateNext = () =>{
+    //                 Object.keys(update).forEach((key)=>{
+    //                     if(this.schema.obj[key]){
+    //                         (doc as Document)[key] = update[key];
+    //                     }
+    //                 });
+
+    //                 query = `${new Query(this).update(update)} WHERE _id = ${mysql.escape(id)} LIMIT 1`;
+    //             }
+
+    //             // if(this.schema.methods.findByIdAndUpdate)
+    //             //     this.schema.methods.findByIdAndUpdate(doc, updateNext);
+    //             // else
+    //                 updateNext();
+
+    //             return this.checkDb(()=>{
+    //                 return mysql.execute(query, this.db.db)
+    //                     .then(()=>{
+    //                         if(callback)
+    //                             callback(null, doc);
+    //                         else
+    //                             return doc;
+    //                     })
+    //                     .catch((err: any)=>{
+    //                         throw err;
+    //                     });
+    //             });
+    //         }
+    //         else{
+    //             if(callback)
+    //                 callback(null, doc);
+    //             else
+    //                 return doc;
+    //         }
+    //     }catch(err){
+    //         if(callback)
+    //             callback(err, null);
+    //         else
+    //             throw err;
+    //     }
+    // }
 
     countDocuments(conditions?: RootQuerySelector | FilterQuery): Promise<number>
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number)=> void): void

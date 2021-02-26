@@ -41,7 +41,7 @@ class Schema{
     private indexes:any = {};
     public readonly options: SchemaOptions;
     public obj: SchemaDefinition;
-    public readonly methods: SchemaMethods;
+    public readonly methods: SchemaMethods = {};
     public get query(){
         return this.convertToString();
     }
@@ -49,7 +49,6 @@ class Schema{
     constructor(definition: SchemaDefinition, options: SchemaOptions){
         this.obj = definition;
         this.options = options;
-        this.methods = {};
 
         const hasId = this.options._id === undefined || this.options._id?true:false;
 
@@ -60,7 +59,7 @@ class Schema{
             this.obj = {...this.obj, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
     }
 
-    pre(method: 'save' | 'update', callBack: (params: Document, next: ()=> void ) => void){
+    pre(method: keyof SchemaMethods, callBack: (params: Document, next: ()=> void ) => void){
         this.methods[method] = callBack;
     }
 

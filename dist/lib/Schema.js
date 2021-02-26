@@ -4,9 +4,9 @@ const dataTypes_1 = require("./plugins/dataTypes");
 class Schema {
     constructor(definition, options) {
         this.indexes = {};
+        this.methods = {};
         this.obj = definition;
         this.options = options;
-        this.methods = {};
         const hasId = this.options._id === undefined || this.options._id ? true : false;
         if (hasId)
             this.obj = Object.assign({ _id: { type: 'VARCHAR', size: 24, primaryKey: true } }, this.obj);

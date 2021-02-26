@@ -6,24 +6,16 @@ import tool from './mysql';
 
 
 export type ConnectionParams = {
-    /**
-     * The hostname of the database you are connecting to. (Default: localhost)
-     */
+    /** The hostname of the database you are connecting to. (Default: localhost) */
     host?: string;
     
-    /**
-     * The MySQL user to authenticate as
-     */
+    /** The MySQL user to authenticate as */
     user?: string;
     
-    /**
-     * The password of that MySQL user
-     */
+    /** The password of that MySQL user */
     password?: string;
     
-    /**
-     * Name of the database to use for this connection
-     */
+    /** Name of the database to use for this connection */
     database?: string;
     
     /**
@@ -39,9 +31,7 @@ export type ConnectionParams = {
      */
     waitForConnections?: boolean;
 
-    /**
-     * The maximum number of connections to create at once. (Default: 10)
-     */
+    /** The maximum number of connections to create at once. (Default: 10) */
     connectionLimit?: number;
 
     /**
@@ -56,9 +46,7 @@ export type ConnectionParams = {
      */
     enableKeepAlive?: true;
 
-    /**
-     * If keep-alive is enabled users can supply an initial delay.
-     */
+    /** If keep-alive is enabled users can supply an initial delay. */
     keepAliveInitialDelay?: number;
 }
 
@@ -67,8 +55,13 @@ type ConnectionModel = {
 }
 
 class Connection{
+    /** Database name */
     public name: string;
+
+    /** Returns MySQL pool instance */
     public db?: mysql.Pool;
+
+    /** Returns models defined through this Connection */
     public models: ConnectionModel = {};
     constructor(props?: ConnectionParams){
         this.name = props && props.database?props.database:'';

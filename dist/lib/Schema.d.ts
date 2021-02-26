@@ -37,7 +37,7 @@ declare class Schema {
     readonly methods: SchemaMethods;
     get query(): string;
     constructor(definition: SchemaDefinition, options: SchemaOptions);
-    pre(method: 'save' | 'update', callBack: (params: Document, next: () => void) => void): void;
+    pre(method: keyof SchemaMethods, callBack: (params: Document, next: () => void) => void): void;
     remove(field: string): void;
     index(fields: SchemaIndex): void;
     private convertToString;

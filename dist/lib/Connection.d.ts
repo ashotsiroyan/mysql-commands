@@ -3,21 +3,13 @@ import Schema from './Schema';
 import Document from './Document';
 import Model from './Model';
 export declare type ConnectionParams = {
-    /**
-     * The hostname of the database you are connecting to. (Default: localhost)
-     */
+    /** The hostname of the database you are connecting to. (Default: localhost) */
     host?: string;
-    /**
-     * The MySQL user to authenticate as
-     */
+    /** The MySQL user to authenticate as */
     user?: string;
-    /**
-     * The password of that MySQL user
-     */
+    /** The password of that MySQL user */
     password?: string;
-    /**
-     * Name of the database to use for this connection
-     */
+    /** Name of the database to use for this connection */
     database?: string;
     /**
      * The milliseconds before a timeout occurs during the connection acquisition. This is slightly different from connectTimeout,
@@ -30,9 +22,7 @@ export declare type ConnectionParams = {
      * (Default: true)
      */
     waitForConnections?: boolean;
-    /**
-     * The maximum number of connections to create at once. (Default: 10)
-     */
+    /** The maximum number of connections to create at once. (Default: 10) */
     connectionLimit?: number;
     /**
      * The maximum number of connection requests the pool will queue before returning an error from getConnection. If set to 0, there
@@ -44,17 +34,18 @@ export declare type ConnectionParams = {
      * user can enable it and supply an initial delay.
      */
     enableKeepAlive?: true;
-    /**
-     * If keep-alive is enabled users can supply an initial delay.
-     */
+    /** If keep-alive is enabled users can supply an initial delay. */
     keepAliveInitialDelay?: number;
 };
 declare type ConnectionModel = {
     [model: string]: Model<Document>;
 };
 declare class Connection {
+    /** Database name */
     name: string;
+    /** Returns MySQL pool instance */
     db?: mysql.Pool;
+    /** Returns models defined through this Connection */
     models: ConnectionModel;
     constructor(props?: ConnectionParams);
     /**  Switches to a different database using the same connection pool. */

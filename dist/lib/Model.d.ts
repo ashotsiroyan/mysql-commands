@@ -3,14 +3,22 @@ import { DocumentQuery } from './Query';
 import Schema from './Schema';
 import Connection from './Connection';
 export declare type QuerySelector = {
+    /** equal */
     $eq?: any;
-    $gt?: any;
-    $gte?: any;
-    $in?: string | string[] | number | number[];
-    $lt?: any;
-    $lte?: any;
+    /** not equal */
     $ne?: any;
+    /** greater than */
+    $gt?: any;
+    /** greater than or equal */
+    $gte?: any;
+    /** like */
+    $in?: string | string[] | number | number[];
+    /** not like */
     $nin?: string | string[] | number | number[];
+    /** less than */
+    $lt?: any;
+    /** less than or equal */
+    $lte?: any;
 };
 export declare type RootQuerySelector = {
     _id?: string;
@@ -25,9 +33,9 @@ interface IModel<T extends Document> {
     find(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T[], T>;
     find(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T[]) => void): DocumentQuery<T[], T>;
     findOne(conditions?: RootQuerySelector | FilterQuery, fields?: string[]): DocumentQuery<T | null, T>;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields: string[], callback: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
     findById(id: string, fields?: string[]): DocumentQuery<T | null, T>;
-    findById(id: string, fields: string[], callback: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
+    findById(id: string, fields: string[], callback: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
     insertOne(params: object): Promise<T>;
     insertOne(params: object, callback: (err: any, res?: T) => void): void;
     insertMany(params: object[]): Promise<T[]>;
@@ -52,11 +60,11 @@ declare class Model<T extends Document> implements IModel<T> {
     find(callback?: (err: any, res?: T[]) => void): DocumentQuery<T[], T>;
     find(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T[]) => void): DocumentQuery<T[], T>;
     find(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T[]) => void): DocumentQuery<T[], T>;
-    findOne(callback?: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
-    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
-    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
-    findById(id: string, callback?: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
-    findById(id: string, fields?: string[], callback?: (err: any, res?: T) => void): DocumentQuery<T | null, T>;
+    findOne(callback?: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, callback?: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
+    findOne(conditions: RootQuerySelector | FilterQuery, fields?: string[], callback?: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
+    findById(id: string, callback?: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
+    findById(id: string, fields?: string[], callback?: (err: any, res?: T | null) => void): DocumentQuery<T | null, T>;
     insertOne(params: object): Promise<T>;
     insertOne(params: object, callback: (err: any, res?: Document) => void): void;
     insertMany(params: object[]): Promise<T[]>;

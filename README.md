@@ -64,6 +64,8 @@ Comment.pre('save', function (params, next) {
 });
 ```
 
+**Important!** We define table structure through model and table is created automatically.
+
 ### Accessing a Model
 Once we define a model through `sqltool.model('ModelName', mySchema)`, we can access it through the same function
 
@@ -114,8 +116,8 @@ MyModel.find({ name: 'karen', age: { $gte: 19 } }).exec(function (err, docs) {
 // executes, name LIKE karen and only selecting the "name" and "age" fields
 await MyModel.find({ name: { $in: 'karen' } }, ['name', 'age']).exec();
 
-// find first 3 documents
-await MyModel.find({ }).limit(3).exec();
+// find 3 documents and sort name in DESC order
+await MyModel.find({ }).limit(3).sort({ name: -1 }).exec();
 
 // find 3 documents skipping 4
 await MyModel.find({ }).limit(3).skip(4).exec();
