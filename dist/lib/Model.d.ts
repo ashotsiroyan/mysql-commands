@@ -48,6 +48,14 @@ interface IModel<T extends Document> {
     deleteOne(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
     deleteMany(conditions: RootQuerySelector | FilterQuery): Promise<void>;
     deleteMany(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
+    findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<T | null>;
+    findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res: T | null) => void): void;
+    findByIdAndUpdate(id: string, update: any): Promise<T | null>;
+    findByIdAndUpdate(id: string, update: any, callback: (err: any, res: T | null) => void): void;
+    findOneAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<T | null>;
+    findOneAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: T | null) => void): void;
+    findByIdAndDelete(id: string): Promise<T | null>;
+    findByIdAndDelete(id: string, callback: (err: any, res?: T | null) => void): void;
     countDocuments(conditions: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
 }
@@ -77,6 +85,14 @@ declare class Model<T extends Document> implements IModel<T> {
     deleteOne(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
     deleteMany(conditions?: RootQuerySelector | FilterQuery): Promise<void>;
     deleteMany(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
+    findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any): Promise<T | null>;
+    findOneAndUpdate(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, res: T | null) => void): void;
+    findByIdAndUpdate(id: string, update: any): Promise<T | null>;
+    findByIdAndUpdate(id: string, update: any, callback: (err: any, res: T | null) => void): void;
+    findOneAndDelete(conditions: RootQuerySelector | FilterQuery): Promise<T | null>;
+    findOneAndDelete(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res: T | null) => void): void;
+    findByIdAndDelete(id: string): Promise<T | null>;
+    findByIdAndDelete(id: string, callback: (err: any, res: T | null) => void): void;
     countDocuments(conditions?: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
     private checkDb;
