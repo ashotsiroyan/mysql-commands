@@ -31,10 +31,7 @@ let connections = mysql.connections;
  * @returns The compiled model
  */
 function model(name: string, schema?: Schema){
-    if(!schema)
-        return connection.models[name];
-    else
-        return connection.model(name, schema);
+    return connection.model(name, schema);
 }
 
 

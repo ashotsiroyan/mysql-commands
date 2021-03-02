@@ -219,18 +219,17 @@ class Model<T extends Document> implements IModel<T>{
             }else
                 insertNext();
 
-            return this.checkDb(()=>{
-                return mysql.execute(query, this.db.db)
-                    .then(()=>{
-                        if(callback)
-                            callback(null, docs);
-                        else
-                            return docs;
-                    })
-                    .catch((err: any)=>{
-                        throw err;
-                    });
-            });                
+
+            return mysql.execute(query, this.db.db)
+                .then(()=>{
+                    if(callback)
+                        callback(null, docs);
+                    else
+                        return docs;
+                })
+                .catch((err: any)=>{
+                    throw err;
+                });        
         }catch(err){
             if(callback)
                 callback(err);
@@ -244,7 +243,7 @@ class Model<T extends Document> implements IModel<T>{
     updateOne(conditions: RootQuerySelector | FilterQuery, doc: any = {}, callback?: (err: any, raw?: any)=> void){
         try{
             if(Object.keys(doc).length > 0){
-                let query: string;
+                let query: string = '';
                     
                 const updateNext = () =>{
                     query = `${new Query(this).update(doc)} ${getConditions(conditions)} LIMIT 1`;
@@ -255,18 +254,17 @@ class Model<T extends Document> implements IModel<T>{
                 else
                     updateNext();
 
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, doc);
-                            else
-                                return doc;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+    
+                return mysql.execute(query, this.db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, doc);
+                        else
+                            return doc;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
             }
             else{
                 if(callback)
@@ -289,7 +287,7 @@ class Model<T extends Document> implements IModel<T>{
             let filterFileds = getConditions(conditions);
 
             if(filterFileds.trim() !== "" && Object.keys(doc).length > 0){
-                let query: string;
+                let query: string = '';
                     
                 const updateNext = () =>{
                     query = `${new Query(this).update(doc)} ${filterFileds}`;
@@ -300,18 +298,17 @@ class Model<T extends Document> implements IModel<T>{
                 else
                     updateNext();
     
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, doc);
-                            else
-                                return doc;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+    
+                return mysql.execute(query, this.db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, doc);
+                        else
+                            return doc;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
             }else{
                 if(callback)
                     callback(null, doc);
@@ -332,18 +329,17 @@ class Model<T extends Document> implements IModel<T>{
         try{
             let query = `DELETE FROM ${this.modelName} ${getConditions(conditions)} LIMIT 1`;
 
-            return this.checkDb(()=>{
-                return mysql.execute(query, this.db.db)
-                    .then(()=>{
-                        if(callback)
-                            callback(null);
-                        else
-                            return undefined;
-                    })
-                    .catch((err: any)=>{
-                        throw err;
-                    });
-            });
+
+            return mysql.execute(query, this.db.db)
+                .then(()=>{
+                    if(callback)
+                        callback(null);
+                    else
+                        return undefined;
+                })
+                .catch((err: any)=>{
+                    throw err;
+                });
         }catch(err){
             if(callback)
                 callback(err);
@@ -361,18 +357,17 @@ class Model<T extends Document> implements IModel<T>{
             if(filterFileds.trim() !== ""){
                 let query = `DELETE FROM ${this.modelName} ${filterFileds}`;
 
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null);
-                            else
-                                return undefined;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+    
+                return mysql.execute(query, this.db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null);
+                        else
+                            return undefined;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
             }else{
                 if(callback)
                     callback(null);
@@ -394,7 +389,7 @@ class Model<T extends Document> implements IModel<T>{
             let doc = await this.findOne(conditions).exec();
 
             if(doc && Object.keys(update).length > 0){
-                let query: string;
+                let query: string = '';
                     
                 const updateNext = () =>{
                     Object.keys(update).forEach((key)=>{
@@ -411,18 +406,17 @@ class Model<T extends Document> implements IModel<T>{
                 // else
                     updateNext();
 
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, doc);
-                            else
-                                return doc;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+    
+                return mysql.execute(query, this.db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, doc);
+                        else
+                            return doc;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
             }
             else{
                 if(callback)
@@ -473,18 +467,17 @@ class Model<T extends Document> implements IModel<T>{
                 // else
                     deleteNext();
 
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, doc);
-                            else
-                                return doc;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+    
+                return mysql.execute(query, this.db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, doc);
+                        else
+                            return doc;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
             }
             else{
                 if(callback)
@@ -523,15 +516,14 @@ class Model<T extends Document> implements IModel<T>{
         try{
             let query = `SELECT COUNT(*) FROM ${this.modelName} ${getConditions(conditions)}`;
         
-            return this.checkDb(()=>{
-                return mysql.execute(query, this.db.db).then(([res]: any[])=>{
-                    let count = res[0]['COUNT(*)'];
 
-                    if(callback)
-                        callback(null, count);
-                    else
-                        return count;
-                });
+            return mysql.execute(query, this.db.db).then(([res]: any[])=>{
+                let count = res[0]['COUNT(*)'];
+
+                if(callback)
+                    callback(null, count);
+                else
+                    return count;
             });
         }catch(err){
             if(callback)
@@ -539,16 +531,6 @@ class Model<T extends Document> implements IModel<T>{
             else
                 throw err;
         }
-    }
-
-    private checkDb( next: ()=> any ){
-        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.modelName} (${this.schema.query})`)
-            .then(()=>{
-                return next();
-            })
-            .catch((err: any)=>{
-                throw err;
-            });
     }
 }
 

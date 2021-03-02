@@ -43,25 +43,23 @@ class DocumentQuery {
         let { mainQuery, limitQuery, sortQuery, skipQuery } = this;
         try {
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== '' ? skipQuery : '');
-            return this.checkDb(() => {
-                return mysql_1.default.execute(query, this.model.db.db)
-                    .then(([rows]) => {
-                    rows = rows.map((row) => {
-                        return new Document_1.default(Object.assign({ doc: row }, this.model));
-                    });
-                    let res;
-                    if (!this.isOne)
-                        res = rows;
-                    else
-                        res = rows[0] ? rows[0] : null;
-                    if (callback)
-                        callback(null, res);
-                    else
-                        return res;
-                })
-                    .catch((err) => {
-                    throw err;
+            return mysql_1.default.execute(query, this.model.db.db)
+                .then(([rows]) => {
+                rows = rows.map((row) => {
+                    return new Document_1.default(Object.assign({ doc: row }, this.model));
                 });
+                let res;
+                if (!this.isOne)
+                    res = rows;
+                else
+                    res = rows[0] ? rows[0] : null;
+                if (callback)
+                    callback(null, res);
+                else
+                    return res;
+            })
+                .catch((err) => {
+                throw err;
             });
         }
         catch (err) {
@@ -70,15 +68,6 @@ class DocumentQuery {
             else
                 throw err;
         }
-    }
-    checkDb(next) {
-        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.model.modelName} (${this.model.schema.query})`)
-            .then(() => {
-            return next();
-        })
-            .catch((err) => {
-            throw err;
-        });
     }
 }
 exports.DocumentQuery = DocumentQuery;

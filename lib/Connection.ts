@@ -82,12 +82,14 @@ class Connection{
      * @param schema a schema. necessary when defining a model
      * @returns The compiled model
      */
-    model(name: string, schema: Schema): Model<Document>{
-        if(!this.models[name]){
+    model(name: string, schema?: Schema): Model<Document>{
+        if(!this.models[name] && schema){
             let model = new Model(name, schema, this);
             this.models[name] = model;
-    
+
             return model;
+        }else if(this.models[name] && !schema){
+            return this.models[name];
         }else{
             throw `The model '${name}' already exists`;
         }

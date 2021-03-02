@@ -78,19 +78,17 @@ class Document {
                 __classPrivateFieldGet(this, _schema).methods.save(this, saveNext);
             else
                 saveNext();
-            return this.checkDb(() => {
-                return mysql_1.default.execute(query, __classPrivateFieldGet(this, _db).db)
-                    .then(() => {
-                    if (this.isNew)
-                        __classPrivateFieldSet(this, _isNew, false);
-                    if (callback)
-                        callback(null, this);
-                    else
-                        return this;
-                })
-                    .catch((err) => {
-                    throw err;
-                });
+            return mysql_1.default.execute(query, __classPrivateFieldGet(this, _db).db)
+                .then(() => {
+                if (this.isNew)
+                    __classPrivateFieldSet(this, _isNew, false);
+                if (callback)
+                    callback(null, this);
+                else
+                    return this;
+            })
+                .catch((err) => {
+                throw err;
             });
         }
         catch (err) {
@@ -123,17 +121,15 @@ class Document {
                     __classPrivateFieldGet(this, _schema).methods.update(this, updateNext);
                 else
                     updateNext();
-                return this.checkDb(() => {
-                    return mysql_1.default.execute(query, __classPrivateFieldGet(this, _db).db)
-                        .then(() => {
-                        if (callback)
-                            callback(null, this);
-                        else
-                            return this;
-                    })
-                        .catch((err) => {
-                        throw err;
-                    });
+                return mysql_1.default.execute(query, __classPrivateFieldGet(this, _db).db)
+                    .then(() => {
+                    if (callback)
+                        callback(null, this);
+                    else
+                        return this;
+                })
+                    .catch((err) => {
+                    throw err;
                 });
             }
             else {
@@ -161,17 +157,15 @@ class Document {
                     __classPrivateFieldGet(this, _schema).methods.remove(this, removeNext);
                 else
                     removeNext();
-                return this.checkDb(() => {
-                    return mysql_1.default.execute(query, __classPrivateFieldGet(this, _db).db)
-                        .then(() => {
-                        if (callback)
-                            callback(null, this);
-                        else
-                            return this;
-                    })
-                        .catch((err) => {
-                        throw err;
-                    });
+                return mysql_1.default.execute(query, __classPrivateFieldGet(this, _db).db)
+                    .then(() => {
+                    if (callback)
+                        callback(null, this);
+                    else
+                        return this;
+                })
+                    .catch((err) => {
+                    throw err;
                 });
             }
             else
@@ -206,15 +200,6 @@ class Document {
             else if (doc[key]) {
                 this[key] = doc[key];
             }
-        });
-    }
-    checkDb(next) {
-        return mysql_1.default.execute(`CREATE TABLE IF NOT EXISTS ${this.modelName} (${this.schema.query})`)
-            .then(() => {
-            return next();
-        })
-            .catch((err) => {
-            throw err;
         });
     }
 }

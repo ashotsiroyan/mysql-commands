@@ -62,48 +62,36 @@ export class DocumentQuery<T, DocType extends Document>{
         try{
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
-            return this.checkDb(()=>{
-                return mysql.execute(query, this.model.db.db)
-                    .then(([rows]: any[])=>{
-                        rows = rows.map((row: any)=>{
-                            return new Document({
-                                doc: row,
-                                ...this.model
-                            });
+            return mysql.execute(query, this.model.db.db)
+                .then(([rows]: any[])=>{
+                    rows = rows.map((row: any)=>{
+                        return new Document({
+                            doc: row,
+                            ...this.model
                         });
-
-                        let res: T;
-
-                        if(!this.isOne)
-                            res = rows;
-                        else
-                            res = rows[0]?rows[0]:null
-
-                        if(callback)
-                            callback(null, res);
-                        else
-                            return res;
-                    })
-                    .catch((err: any)=>{
-                        throw err;
                     });
-            });
+
+                    let res: T;
+
+                    if(!this.isOne)
+                        res = rows;
+                    else
+                        res = rows[0]?rows[0]:null
+
+                    if(callback)
+                        callback(null, res);
+                    else
+                        return res;
+                })
+                .catch((err: any)=>{
+                    throw err;
+                });
         }catch(err){
             if(callback)
                 callback(err);
             else
                 throw err;
         }
-    }
-
-    private checkDb( next: ()=> any ){
-        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.model.modelName} (${this.model.schema.query})`)
-            .then(()=>{
-                return next();
-            })
-            .catch((err: any)=>{
-                throw err;
-            });
     }
 }
 

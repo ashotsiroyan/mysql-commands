@@ -95,12 +95,12 @@ class Schema{
     private convertToString(){
         const hasId = this.options._id === undefined || this.options._id?true:false;
     
-        let mysql: string = "",
-            indexSql: string = "";
+        let columns: string[] = [],
+            indexes: string[] = [];
 
         Object.keys(this.obj).forEach((field, i)=>{
-            let option = this.obj[field];
-            mysql += `${field} `;
+            let option = this.obj[field],
+                mysql = `${field} `;
 
             if(typeof option !== 'string'){
                 let size = "";
@@ -142,25 +142,17 @@ class Schema{
                 mysql += `${option}${dataTypesOptions[option as string].default?"(" + dataTypesOptions[option as string].default + ")":""} NOT NULL`;
             }
 
-            if(i !== Object.keys(this.obj).length - 1)
-                mysql += ", ";
+            columns.push(mysql);
         });
 
         Object.keys(this.indexes).forEach((index, i)=>{
-            indexSql += `INDEX ${index} (`;
-
-            this.indexes[index].forEach((field:any, j:number)=>{
-                if(this.obj[field])
-                    indexSql += `${field}${j !== this.indexes[index].length - 1?', ':''}`;
-            });
-
-            indexSql += `)${i !== Object.keys(this.indexes).length - 1?', ':''}`;
+            indexes.push(`${index} (${this.indexes[index].join(', ')})`);
         });
 
-        if(indexSql.trim() !== '')
-            mysql += ', ' + indexSql;
-
-        return mysql;
+        return {
+            columns,
+            indexes
+        };
     }
 }
 

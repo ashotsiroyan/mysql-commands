@@ -104,21 +104,19 @@ class Document implements IDocument{
             else
                 saveNext();
 
-            return this.checkDb(()=>{
-                return mysql.execute(query, this.#db.db)
-                    .then(()=>{
-                        if(this.isNew)
-                            this.#isNew = false;
+            return mysql.execute(query, this.#db.db)
+                .then(()=>{
+                    if(this.isNew)
+                        this.#isNew = false;
 
-                        if(callback)
-                            callback(null, this as Document);
-                        else
-                            return this as Document;
-                    })
-                    .catch((err:any)=>{
-                        throw err;
-                    });
-            })
+                    if(callback)
+                        callback(null, this as Document);
+                    else
+                        return this as Document;
+                })
+                .catch((err:any)=>{
+                    throw err;
+                });
         }catch(err){
             if(callback){
                 callback(err);
@@ -162,18 +160,16 @@ class Document implements IDocument{
                 else
                     updateNext();
     
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.#db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, this as Document);
-                            else
-                                return this as Document;
-                        })
-                        .catch((err:any)=>{
-                            throw err;
-                        });
-                })
+                return mysql.execute(query, this.#db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, this as Document);
+                        else
+                            return this as Document;
+                    })
+                    .catch((err:any)=>{
+                        throw err;
+                    });
             }else{
                 if(callback)
                     callback(null, this as Document);
@@ -204,18 +200,16 @@ class Document implements IDocument{
                 else
                     removeNext();
 
-                return this.checkDb(()=>{
-                    return mysql.execute(query, this.#db.db)
-                        .then(()=>{
-                            if(callback)
-                                callback(null, this);
-                            else
-                                return this;
-                        })
-                        .catch((err: any)=>{
-                            throw err;
-                        });
-                });
+                return mysql.execute(query, this.#db.db)
+                    .then(()=>{
+                        if(callback)
+                            callback(null, this);
+                        else
+                            return this;
+                    })
+                    .catch((err: any)=>{
+                        throw err;
+                    });
             }
             else
                 throw "ID isn't filled."
@@ -254,16 +248,6 @@ class Document implements IDocument{
                 this[key] = doc[key];
             }
         });
-    }
-
-    private checkDb( next: ()=> any ){
-        return mysql.execute(`CREATE TABLE IF NOT EXISTS ${this.modelName} (${this.schema.query})`)
-            .then(()=>{
-                return next();
-            })
-            .catch((err: any)=>{
-                throw err;
-            });
     }
 }
 
