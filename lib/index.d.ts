@@ -4,7 +4,7 @@ import Schema from './Schema';
  * @param params MySQL connection params
  * @returns the default Connection object
  */
-declare let connect: (props: import("./Connection").ConnectionParams) => import("./Connection").default;
+declare let connect: (props: import("./Connection").ConnectionParams) => Promise<import("./Connection").default>;
 /**
  * Creates a Connection instance.
  * Each connection instance maps to a single database. This method is helpful
@@ -12,7 +12,7 @@ declare let connect: (props: import("./Connection").ConnectionParams) => import(
  * @param params MySQL connection params
  * @returns the created Connection object
  */
-declare let createConnection: (props: import("./Connection").ConnectionParams) => import("./Connection").default;
+declare let createConnection: (props: import("./Connection").ConnectionParams) => Promise<import("./Connection").default>;
 /** Returns the default connection of the sqltool module. */
 declare let connection: import("./Connection").default;
 /** An array containing all connections associated with this sqltool instance. */

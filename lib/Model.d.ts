@@ -95,6 +95,5 @@ declare class Model<T extends Document> implements IModel<T> {
     findByIdAndDelete(id: string, callback: (err: any, res: T | null) => void): void;
     countDocuments(conditions?: RootQuerySelector | FilterQuery): Promise<number>;
     countDocuments(conditions: RootQuerySelector | FilterQuery, callback: (err: any, res?: number) => void): void;
-    private checkDb;
 }
 export default Model;

@@ -16,6 +16,5 @@ declare class DocumentQuery<T, DocType extends Document> {
     sort(arg: SortType): this;
     exec(): Promise<T>;
     exec(callback: (err: any, res?: T) => void): void;
-    private checkDb;
 }
 export default DocumentQuery;

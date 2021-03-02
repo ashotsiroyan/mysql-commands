@@ -30,6 +30,5 @@ declare class Document implements IDocument {
     remove(): Document | Promise<Document>;
     remove(callback: (err: any, res?: Document) => void): void;
     private convertData;
-    private checkDb;
 }
 export default Document;

@@ -35,7 +35,10 @@ declare class Schema {
     readonly options: SchemaOptions;
     obj: SchemaDefinition;
     readonly methods: SchemaMethods;
-    get query(): string;
+    get query(): {
+        columns: string[];
+        indexes: string[];
+    };
     constructor(definition: SchemaDefinition, options: SchemaOptions);
     pre(method: keyof SchemaMethods, callBack: (params: Document, next: () => void) => void): void;
     remove(field: string): void;

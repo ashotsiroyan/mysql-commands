@@ -56,7 +56,7 @@ declare class Connection {
      * @param schema a schema. necessary when defining a model
      * @returns The compiled model
      */
-    model(name: string, schema: Schema): Model<Document>;
+    model(name: string, schema?: Schema): Model<Document>;
     modelNames(): string[];
     deleteModel(model: string): this;
     dropTable(name: string, callback?: (err: any) => void): Promise<void>;

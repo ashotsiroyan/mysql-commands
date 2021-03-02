@@ -19,7 +19,7 @@ import sqltool from '@ashotsiroyan/sqltool';
 
 ### Connecting to MySQL
 ```js
-sqltool.connect({
+await sqltool.connect({
     host: 'localhost',
     user: 'root',
     password: '',
@@ -131,7 +131,7 @@ console.log(instance.name);  // 'karen'
 
 **Important!** If you opened a separate connection using `sqltool.createConnection()` but attempt to access the model through `sqltool.model('ModelName')` it will not work as expected since it is not hooked up to an active db connection. In this case access your model through the connection you created:
 ```js
-const conn = sqltool.createConnection({ conn_params });
+const conn = await sqltool.createConnection({ conn_params });
 const MyModel = conn.model('ModelName', schema);
 const m = MyModel.new();
 m.save(); // works
@@ -140,7 +140,7 @@ m.save(); // works
 vs
 
 ```js
-const conn = sqltool.createConnection({ conn_params });
+const conn = await sqltool.createConnection({ conn_params });
 const MyModel = sqltool.model('ModelName', schema);
 const m = MyModel.new();
 m.save(); // does not work b/c the default connection object was never connected
