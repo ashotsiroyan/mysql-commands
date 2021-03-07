@@ -1,0 +1,35 @@
+lib-cov
+*.swp
+*.sw*
+node_modules/
+*.orig
+.DS_Store
+docs/*.json
+/.idea
+/inspections
+npm-debug.log
+data/
+.nyc_output/
+
+
+# Visual Studio
+# =========
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Visual Studio Code
+.vscode
+
+*.key
+
+docs/*.html
+
+# Webpack output
+dist
+test/files/main.js
+
+package-lock.json
+
+.config*

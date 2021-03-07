@@ -40,10 +40,10 @@ interface IModel<T extends Document> {
     insertOne(params: object, callback: (err: any, res?: T) => void): void;
     insertMany(params: object[]): Promise<T[]>;
     insertMany(params: object[], callback: (err: any, res?: T[]) => void): void;
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any) => void): void;
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any) => void): void;
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any): Promise<any>;
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any, callback: (err: any, raw?: any) => void): void;
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any): Promise<any>;
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any, callback: (err: any, raw?: any) => void): void;
     deleteOne(conditions: RootQuerySelector | FilterQuery): Promise<void>;
     deleteOne(conditions: RootQuerySelector | FilterQuery, callback: (err: any) => void): void;
     deleteMany(conditions: RootQuerySelector | FilterQuery): Promise<void>;

@@ -10,13 +10,13 @@ test/
 index.html
 index.pug
 bin/
-tools/31*
 *.key
 data/
 
 *.txt
 *.png
 
+examples/
 .github
 .vscode
 .eslintignore
