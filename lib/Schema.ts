@@ -31,6 +31,8 @@ interface SchemaMethods {
     insertMany?: (params: any, next: ()=> void ) => void;
     update?: (params: any, next: ()=> void ) => void;
     remove?: (params: any, next: ()=> void ) => void;
+    findOneAndUpdate?: (params: any, next: ()=> void ) => void;
+    findOneAndDelete?: (params: any, next: ()=> void ) => void;
 }
 
 export interface SchemaDefinition{

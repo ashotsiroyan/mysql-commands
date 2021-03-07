@@ -5,6 +5,21 @@
 
 ### Added
 
+- Schema.prototype.pre('findOneAndUpdate', ()=>{})
+- Schema.prototype.pre('findOneAndDelete', ()=>{})
+
+### Changed
+
+- Model.prototype.updateOne()
+- Model.prototype.updateMany()
+- Model.prototype.findOneAndUpdate()
+- Model.prototype.findOneAndDelete()
+
+
+## [1.4.13] - 2021-03-02
+
+### Added
+
 - Check if table exists, otherwise update structure during connection creating
 
 ### Changed
@@ -39,6 +54,7 @@
 - Model.prototype.findById()
 
 
+[1.4.14]: https://github.com/ashotsiroyan/sqltool/compare/1.4.13...1.4.14
 [1.4.13]: https://github.com/ashotsiroyan/sqltool/compare/1.4.12...1.4.13
 [1.4.12]: https://github.com/ashotsiroyan/sqltool/compare/1.4.11...1.4.12
 [1.4.11]: https://github.com/ashotsiroyan/sqltool/compare/1.4.10...1.4.11

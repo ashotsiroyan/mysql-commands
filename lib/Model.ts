@@ -61,11 +61,11 @@ interface IModel<T extends Document>{
     insertMany(params: object[]): Promise<T[]>;
     insertMany(params: object[], callback: (err: any, res?: T[])=> void): void;
 
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
-    updateOne(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any): Promise<any>;
+    updateOne(conditions: RootQuerySelector | FilterQuery, doc: any, callback: (err: any, raw?: any)=> void): void;
 
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any): Promise<any>;
-    updateMany(conditions: RootQuerySelector | FilterQuery, update: any, callback: (err: any, raw?: any)=> void): void;
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any): Promise<any>;
+    updateMany(conditions: RootQuerySelector | FilterQuery, doc: any, callback: (err: any, raw?: any)=> void): void;
 
     deleteOne(conditions: RootQuerySelector | FilterQuery): Promise<void>;
     deleteOne(conditions: RootQuerySelector | FilterQuery, callback: (err: any)=> void): void;
@@ -401,9 +401,9 @@ class Model<T extends Document> implements IModel<T>{
                     query = `${new Query(this).update(update)} ${getConditions(conditions)} LIMIT 1`;
                 }
 
-                // if(this.schema.methods.findOneAndUpdate)
-                //     this.schema.methods.findOneAndUpdate(update, updateNext);
-                // else
+                if(this.schema.methods.findOneAndUpdate)
+                    this.schema.methods.findOneAndUpdate(update, updateNext);
+                else
                     updateNext();
 
     
@@ -462,9 +462,9 @@ class Model<T extends Document> implements IModel<T>{
                     query += ` ${getConditions(conditions)} LIMIT 1`;
                 }
 
-                // if(this.schema.methods.findOneAndUpdate)
-                //     this.schema.methods.findOneAndUpdate(update, updateNext);
-                // else
+                if(this.schema.methods.findOneAndDelete)
+                    this.schema.methods.findOneAndDelete(doc, deleteNext);
+                else
                     deleteNext();
 
     
