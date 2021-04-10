@@ -3,16 +3,16 @@ SQLtool is a MySQL object modeling tool designed to work in an asynchronous envi
 
 ## Installation
 ```
-$ npm install @ashotsiroyan/sqltool
+$ npm install sqltool2
 ```
 
 ## Importing
 ```js
 // Using Node.js `require()`
-const sqltool = require('@ashotsiroyan/sqltool');
+const sqltool = require('sqltool2');
 
 // Using ES6 imports
-import sqltool from '@ashotsiroyan/sqltool';
+import sqltool from 'sqltool2';
 ```
 
 ## Overview

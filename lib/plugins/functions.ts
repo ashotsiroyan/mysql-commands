@@ -37,7 +37,7 @@ export function getConditions(arg?: RootQuerySelector | FilterQuery) {
                         }
                         else if(field === '$in' || field === '$nin'){
                             params[field].forEach((value: any)=>{
-                                filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)} OR `;
+                                filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)} ${field === '$nin'?'AND':'OR'} `;
                             });
                         }
                     }
