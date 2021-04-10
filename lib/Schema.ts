@@ -58,7 +58,7 @@ class Schema{
             this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
 
         if(this.options.timestamps)
-            this.obj = {...this.obj, _createdAt: {type: 'DATE', default: new Date()}, _updatedAt: {type: 'DATE', default: new Date()}};
+            this.obj = {...this.obj, _createdAt: {type: 'DATETIME', default: new Date()}, _updatedAt: {type: 'DATETIME', default: new Date()}};
     }
 
     pre(method: keyof SchemaMethods, callBack: (params: Document, next: ()=> void ) => void){
