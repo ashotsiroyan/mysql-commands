@@ -1,6 +1,6 @@
 {
-  "name": "@ashotsiroyan/sqltool",
-  "version": "1.4.14",
+  "name": "sqltool2",
+  "version": "0.0.3",
   "description": "MySQL object modeling tool",
   "repository": {
     "type": "git",
