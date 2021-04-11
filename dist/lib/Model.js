@@ -116,7 +116,10 @@ class Model {
                     return docs;
             })
                 .catch((err) => {
-                throw err;
+                if (callback)
+                    callback(err);
+                else
+                    throw err;
             });
         }
         catch (err) {
@@ -145,7 +148,10 @@ class Model {
                         return doc;
                 })
                     .catch((err) => {
-                    throw err;
+                    if (callback)
+                        callback(err);
+                    else
+                        throw err;
                 });
             }
             else {
@@ -182,7 +188,10 @@ class Model {
                         return doc;
                 })
                     .catch((err) => {
-                    throw err;
+                    if (callback)
+                        callback(err);
+                    else
+                        throw err;
                 });
             }
             else {
@@ -210,7 +219,10 @@ class Model {
                     return undefined;
             })
                 .catch((err) => {
-                throw err;
+                if (callback)
+                    callback(err);
+                else
+                    throw err;
             });
         }
         catch (err) {
@@ -233,7 +245,10 @@ class Model {
                         return undefined;
                 })
                     .catch((err) => {
-                    throw err;
+                    if (callback)
+                        callback(err);
+                    else
+                        throw err;
                 });
             }
             else {
@@ -276,7 +291,10 @@ class Model {
                             return doc;
                     })
                         .catch((err) => {
-                        throw err;
+                        if (callback)
+                            callback(err, null);
+                        else
+                            throw err;
                     });
                 }
                 else {
@@ -333,7 +351,10 @@ class Model {
                             return doc;
                     })
                         .catch((err) => {
-                        throw err;
+                        if (callback)
+                            callback(err, null);
+                        else
+                            throw err;
                     });
                 }
                 else {
@@ -378,6 +399,12 @@ class Model {
                     callback(null, count);
                 else
                     return count;
+            })
+                .catch((err) => {
+                if (callback)
+                    callback(err);
+                else
+                    throw err;
             });
         }
         catch (err) {

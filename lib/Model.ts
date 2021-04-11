@@ -228,7 +228,10 @@ class Model<T extends Document> implements IModel<T>{
                         return docs;
                 })
                 .catch((err: any)=>{
-                    throw err;
+                    if(callback)
+                        callback(err);
+                    else
+                        throw err;
                 });        
         }catch(err){
             if(callback)
@@ -263,7 +266,10 @@ class Model<T extends Document> implements IModel<T>{
                             return doc;
                     })
                     .catch((err: any)=>{
-                        throw err;
+                        if(callback)
+                            callback(err);
+                        else
+                            throw err;
                     });
             }
             else{
@@ -307,7 +313,10 @@ class Model<T extends Document> implements IModel<T>{
                             return doc;
                     })
                     .catch((err: any)=>{
-                        throw err;
+                        if(callback)
+                            callback(err);
+                        else
+                            throw err;
                     });
             }else{
                 if(callback)
@@ -338,7 +347,10 @@ class Model<T extends Document> implements IModel<T>{
                         return undefined;
                 })
                 .catch((err: any)=>{
-                    throw err;
+                    if(callback)
+                        callback(err);
+                    else
+                        throw err;
                 });
         }catch(err){
             if(callback)
@@ -366,7 +378,10 @@ class Model<T extends Document> implements IModel<T>{
                             return undefined;
                     })
                     .catch((err: any)=>{
-                        throw err;
+                        if(callback)
+                            callback(err);
+                        else
+                            throw err;
                     });
             }else{
                 if(callback)
@@ -415,7 +430,10 @@ class Model<T extends Document> implements IModel<T>{
                             return doc;
                     })
                     .catch((err: any)=>{
-                        throw err;
+                        if(callback)
+                            callback(err, null);
+                        else
+                            throw err;
                     });
             }
             else{
@@ -476,7 +494,10 @@ class Model<T extends Document> implements IModel<T>{
                             return doc;
                     })
                     .catch((err: any)=>{
-                        throw err;
+                        if(callback)
+                            callback(err, null);
+                        else
+                            throw err;
                     });
             }
             else{
@@ -524,6 +545,12 @@ class Model<T extends Document> implements IModel<T>{
                     callback(null, count);
                 else
                     return count;
+            })
+            .catch((err: any)=>{
+                if(callback)
+                    callback(err);
+                else
+                    throw err;
             });
         }catch(err){
             if(callback)

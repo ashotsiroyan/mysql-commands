@@ -115,7 +115,10 @@ class Document implements IDocument{
                         return this as Document;
                 })
                 .catch((err:any)=>{
-                    throw err;
+                    if(callback){
+                        callback(err);
+                    }else
+                        throw err;
                 });
         }catch(err){
             if(callback){

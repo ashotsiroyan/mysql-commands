@@ -88,7 +88,11 @@ class Document {
                     return this;
             })
                 .catch((err) => {
-                throw err;
+                if (callback) {
+                    callback(err);
+                }
+                else
+                    throw err;
             });
         }
         catch (err) {

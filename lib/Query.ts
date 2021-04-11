@@ -57,9 +57,9 @@ export class DocumentQuery<T, DocType extends Document>{
     exec(): Promise<T>
     exec(callback: (err: any, res?: T)=> void): void
     exec(callback?: (err: any, res?: T)=> void){
-        let {mainQuery, limitQuery, sortQuery, skipQuery} = this;
-
         try{
+            let {mainQuery, limitQuery, sortQuery, skipQuery} = this;
+    
             let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
             return mysql.execute(query, this.model.db.db)
@@ -84,7 +84,10 @@ export class DocumentQuery<T, DocType extends Document>{
                         return res;
                 })
                 .catch((err: any)=>{
-                    throw err;
+                    if(callback)
+                        callback(err);
+                    else
+                        throw err;
                 });
         }catch(err){
             if(callback)
