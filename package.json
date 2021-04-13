@@ -1,6 +1,6 @@
 {
   "name": "sqltool2",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "MySQL object modeling tool",
   "repository": {
     "type": "git",

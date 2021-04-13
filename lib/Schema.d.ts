@@ -40,6 +40,7 @@ declare class Schema {
     get query(): {
         columns: string[];
         indexes: string[];
+        fileds: string[];
     };
     constructor(definition: SchemaDefinition, options: SchemaOptions);
     pre(method: keyof SchemaMethods, callBack: (params: Document, next: () => void) => void): void;
