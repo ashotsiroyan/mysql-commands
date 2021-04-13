@@ -52,12 +52,12 @@ class Schema{
         this.obj = definition;
         this.options = options;
 
-        const hasId = this.options._id === undefined || this.options._id?true:false;
+        const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
 
         if(hasId)
             this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
 
-        if(this.options.timestamps)
+        if(Boolean(this.options) && this.options.timestamps)
             this.obj = {...this.obj, _createdAt: {type: 'DATETIME', default: new Date()}, _updatedAt: {type: 'DATETIME', default: new Date()}};
     }
 
@@ -95,12 +95,13 @@ class Schema{
     }
 
     private convertToString(){
-        const hasId = this.options._id === undefined || this.options._id?true:false;
+        const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
     
-        let columns: string[] = [],
+        let fileds = Object.keys(this.obj),
+            columns: string[] = [],
             indexes: string[] = [];
 
-        Object.keys(this.obj).forEach((field, i)=>{
+        fileds.forEach((field, i)=>{
             let option = this.obj[field],
                 mysql = `${field} `;
 
@@ -153,7 +154,8 @@ class Schema{
 
         return {
             columns,
-            indexes
+            indexes,
+            fileds
         };
     }
 }

@@ -14,8 +14,7 @@ const selectorActions: QuerySelector = {
 }
 
 
-
-export function getConditions(arg?: RootQuerySelector | FilterQuery) {
+function getConditions(arg?: RootQuerySelector | FilterQuery) {
     let filterFileds = "";
 
     const closer = ({params, prevField = null}: any) =>{
@@ -68,9 +67,7 @@ export function getConditions(arg?: RootQuerySelector | FilterQuery) {
     return filterFileds;
 }
 
-
-
-export function getFileds(arg?: string[]){
+function getFileds(arg?: string[]){
     let showFileds = arg && arg.length > 0?"":"*";
 
     if(arg && arg.length > 0)
@@ -81,9 +78,7 @@ export function getFileds(arg?: string[]){
     return showFileds;
 }
 
-
-
-export function withOptions(value: any, options: any){
+function withOptions(value: any, options: any){
     if(typeof value === 'string' && typeof options !== 'string'){
         let def = (options as SchemaDefinition);
 
@@ -98,4 +93,29 @@ export function withOptions(value: any, options: any){
     }
 
     return value;
+}
+
+function joinWithFields(separator: string, array: any[], fields: string[]){
+    let string = '';
+
+    array.forEach((el, i)=>{
+        string += el;
+
+        if(i === 0)
+            string += ' FIRST';
+        else
+            string += ' AFTER ' + fields[i - 1];
+
+        if(i !== array.length - 1)
+            string += separator;
+    });
+
+    return string;
+}
+
+export {
+    getConditions,
+    getFileds,
+    withOptions,
+    joinWithFields
 }

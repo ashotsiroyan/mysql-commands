@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import Connection, {ConnectionParams} from './Connection';
+import {joinWithFields} from './plugins/functions';
 
 
 interface Imysql {
@@ -28,10 +29,10 @@ var Singleton: Imysql = (function() {
 
                 for(let i = 0; i < keys.length; ++i){
                     let model = connection.models[keys[i]],
-                        {columns, indexes} = model.schema.query;
+                        {columns, indexes, fileds} = model.schema.query;
 
                     await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`);
-                    await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS (${columns.join(', ')})${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
+                    await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
                 }
 
                 return connection;
@@ -47,10 +48,10 @@ var Singleton: Imysql = (function() {
 
                 for(let i = 0; i < keys.length; ++i){
                     let model = _conn.models[keys[i]],
-                        {columns, indexes} = model.schema.query;
+                    {columns, indexes, fileds} = model.schema.query;
 
-                    await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`);
-                    await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS (${columns.join(', ')})${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
+                    await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`, _conn.db);
+                    await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`, _conn.db);
                 }
 
                 connections.push(_conn);

@@ -1,0 +1,26 @@
+# Changelog
+
+
+## [0.0.6] - 2021-04-13
+
+### Added
+
+- New fields position while adding
+
+### Changed
+
+- Fixing Schema options existance
+
+
+## [0.0.5] - 2021-04-11
+
+### Changed
+
+- Fixing callBacks
+
+
+## [0.0.4] - 2021-04-10
+
+### Changed
+
+- Change formats of _createdAt and _updatedAt from Date to Datetime

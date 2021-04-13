@@ -48,7 +48,7 @@ class Document {
                 let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj), cols = "", values = "", updateString = "";
                 keys.forEach((key) => {
                     let value = this[key];
-                    if (!this.isNew && __classPrivateFieldGet(this, _schema).options.timestamps && key === '_updatedAt')
+                    if (!this.isNew && Boolean(__classPrivateFieldGet(this, _schema).options) && __classPrivateFieldGet(this, _schema).options.timestamps && key === '_updatedAt')
                         value = new Date();
                     if (value) {
                         value = mysql_1.default.escape(functions_1.withOptions(value, __classPrivateFieldGet(this, _schema).obj[key]));
@@ -115,7 +115,7 @@ class Document {
                         value = mysql_1.default.escape(value);
                         query += `${key} = ${value}, `;
                     });
-                    if (__classPrivateFieldGet(this, _schema).options.timestamps)
+                    if (Boolean(__classPrivateFieldGet(this, _schema).options) && __classPrivateFieldGet(this, _schema).options.timestamps)
                         query += `_updatedAt = ${mysql_1.default.escape(new Date())}, `;
                     if (query.slice(-2) === ', ')
                         query = query.slice(0, -2);
@@ -184,7 +184,7 @@ class Document {
         }
     }
     convertData({ doc }) {
-        const hasId = __classPrivateFieldGet(this, _schema).options._id === undefined || __classPrivateFieldGet(this, _schema).options._id ? true : false;
+        const hasId = __classPrivateFieldGet(this, _schema).options === undefined || __classPrivateFieldGet(this, _schema).options._id === undefined || __classPrivateFieldGet(this, _schema).options._id;
         let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj);
         keys.forEach((key) => {
             if (this.isNew) {

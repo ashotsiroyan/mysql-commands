@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.withOptions = exports.getFileds = exports.getConditions = void 0;
+exports.joinWithFields = exports.withOptions = exports.getFileds = exports.getConditions = void 0;
 const mysql_1 = __importDefault(require("../mysql"));
 const selectorActions = {
     $lt: '<',
@@ -85,3 +85,17 @@ function withOptions(value, options) {
     return value;
 }
 exports.withOptions = withOptions;
+function joinWithFields(separator, array, fields) {
+    let string = '';
+    array.forEach((el, i) => {
+        string += el;
+        if (i === 0)
+            string += ' FIRST';
+        else
+            string += ' AFTER ' + fields[i - 1];
+        if (i !== array.length - 1)
+            string += separator;
+    });
+    return string;
+}
+exports.joinWithFields = joinWithFields;

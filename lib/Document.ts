@@ -67,7 +67,7 @@ class Document implements IDocument{
                 keys.forEach((key)=>{
                     let value = this[key];
 
-                    if(!this.isNew && this.#schema.options.timestamps && key === '_updatedAt')
+                    if(!this.isNew && Boolean(this.#schema.options) && this.#schema.options.timestamps && key === '_updatedAt')
                         value = new Date();
 
                     if(value){
@@ -148,7 +148,7 @@ class Document implements IDocument{
                         query += `${key} = ${value}, `;
                     });
 
-                    if(this.#schema.options.timestamps)
+                    if(Boolean(this.#schema.options) && this.#schema.options.timestamps)
                         query += `_updatedAt = ${mysql.escape(new Date())}, `;
                     
                     if(query.slice(-2) === ', ')
@@ -225,7 +225,7 @@ class Document implements IDocument{
     }
 
     private convertData({doc}: any){
-        const hasId = this.#schema.options._id === undefined || this.#schema.options._id?true:false;
+        const hasId = this.#schema.options === undefined || this.#schema.options._id === undefined || this.#schema.options._id;
 
         let keys = Object.keys(this.#schema.obj);
         keys.forEach((key)=>{

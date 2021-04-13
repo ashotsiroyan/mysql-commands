@@ -121,7 +121,7 @@ export class Query{
             }
         });
 
-        if(this.model.schema.options.timestamps)
+        if(Boolean(this.model.schema.options) && this.model.schema.options.timestamps)
             query += `_updatedAt = ${mysql.escape(new Date())}, `;
 
         if(query.slice(-2) === ', ')
