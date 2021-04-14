@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [0.0.7] - 2021-04-14
+
+
+### Changed
+
+- Fixing Documents fileds' sending
+
+
 ## [0.0.6] - 2021-04-13
 
 ### Added

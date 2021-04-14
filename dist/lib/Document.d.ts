@@ -22,11 +22,13 @@ declare class Document implements IDocument {
     get schema(): Schema;
     get modelName(): string;
     get isNew(): boolean;
+    /** Sends an save command with this document _id as the query selector.  */
     save(): Promise<Document>;
     save(callback: (err: any, res?: Document) => void): void;
     /** Sends an update command with this document _id as the query selector.  */
     update(doc: any): Promise<Document>;
     update(doc: any, callback: (err: any, res?: Document) => void): void;
+    /** Remove document with this document _id as the query selector.  */
     remove(): Document | Promise<Document>;
     remove(callback: (err: any, res?: Document) => void): void;
     private convertData;

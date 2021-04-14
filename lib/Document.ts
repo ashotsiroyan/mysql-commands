@@ -52,6 +52,7 @@ class Document implements IDocument{
         return this.#isNew;
     }
 
+    /** Sends an save command with this document _id as the query selector.  */
     save(): Promise<Document>;
     save(callback: (err: any, res?: Document)=> void): void;
     save(callback?: (err: any, res?: Document)=> void){
@@ -187,6 +188,7 @@ class Document implements IDocument{
         }
     }
 
+    /** Remove document with this document _id as the query selector.  */
     remove(): Document | Promise<Document>;
     remove(callback: (err: any, res?: Document)=> void): void;
     remove(callback?: (err: any, res?: Document)=> void){
@@ -247,7 +249,7 @@ class Document implements IDocument{
     
                 if(value)
                     this[key] = value;
-            }else if(doc[key]){
+            }else if(typeof doc[key] !== 'undefined'){
                 this[key] = doc[key];
             }
         });
