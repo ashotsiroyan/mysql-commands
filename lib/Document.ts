@@ -237,6 +237,9 @@ class Document implements IDocument{
 
                 if(typeof this.#schema.obj[key] !== 'string'){
                     defaultValue = (this.#schema.obj[key] as SchemaDefinition).default;
+
+                    if(typeof defaultValue === 'function')
+                        defaultValue = (defaultValue as Function)();
                 }
 
                 if(doc[key])

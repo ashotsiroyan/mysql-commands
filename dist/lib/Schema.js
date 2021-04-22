@@ -11,7 +11,7 @@ class Schema {
         if (hasId)
             this.obj = Object.assign({ _id: { type: 'VARCHAR', size: 24, primaryKey: true } }, this.obj);
         if (Boolean(this.options) && this.options.timestamps)
-            this.obj = Object.assign(Object.assign({}, this.obj), { _createdAt: { type: 'DATETIME', default: new Date() }, _updatedAt: { type: 'DATETIME', default: new Date() } });
+            this.obj = Object.assign(Object.assign({}, this.obj), { _createdAt: { type: 'DATETIME', default: () => new Date() }, _updatedAt: { type: 'DATETIME', default: () => new Date() } });
     }
     get query() {
         return this.convertToString();

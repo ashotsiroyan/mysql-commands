@@ -1,8 +1,14 @@
 # Changelog
 
 
-## [0.0.7] - 2021-04-14
+## [0.0.8] - 2021-04-22
 
+### Changed
+
+- Fixing timestamps date setting
+
+
+## [0.0.7] - 2021-04-14
 
 ### Changed
 
