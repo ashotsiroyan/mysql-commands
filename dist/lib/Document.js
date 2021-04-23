@@ -50,7 +50,7 @@ class Document {
                     let value = this[key];
                     if (!this.isNew && Boolean(__classPrivateFieldGet(this, _schema).options) && __classPrivateFieldGet(this, _schema).options.timestamps && key === '_updatedAt')
                         value = new Date();
-                    if (value) {
+                    if (typeof value !== 'undefined') {
                         value = mysql_1.default.escape(functions_1.withOptions(value, __classPrivateFieldGet(this, _schema).obj[key]));
                         if (this.isNew) {
                             cols += `${key}, `;

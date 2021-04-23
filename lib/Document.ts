@@ -71,7 +71,7 @@ class Document implements IDocument{
                     if(!this.isNew && Boolean(this.#schema.options) && this.#schema.options.timestamps && key === '_updatedAt')
                         value = new Date();
 
-                    if(value){
+                    if(typeof value !== 'undefined'){
                         value = mysql.escape(withOptions(value, this.#schema.obj[key]));
         
                         if(this.isNew){
