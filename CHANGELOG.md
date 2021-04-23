@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.0.9] - 2021-04-23
+
+### Changed
+
+- Fixing Document option testing
+
+
 ## [0.0.8] - 2021-04-22
 
 ### Changed
