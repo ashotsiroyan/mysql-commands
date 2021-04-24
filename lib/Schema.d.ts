@@ -1,5 +1,4 @@
 import { dataTypes } from './plugins/dataTypes';
-import Document from './Document';
 declare type SchemaDefinitionParams = {
     type?: dataTypes;
     default?: any;
@@ -21,13 +20,13 @@ interface SchemaOptions {
     _id?: boolean;
     timestamps?: boolean;
 }
-interface SchemaMethods {
-    save?: (params: any, next: () => void) => void;
-    insertMany?: (params: any, next: () => void) => void;
-    update?: (params: any, next: () => void) => void;
-    remove?: (params: any, next: () => void) => void;
-    findOneAndUpdate?: (params: any, next: () => void) => void;
-    findOneAndDelete?: (params: any, next: () => void) => void;
+interface SchemaPreMethods {
+    save?(next: () => void): void;
+    insertMany?(next: () => void): void;
+    update?(next: () => void): void;
+    remove?(next: () => void): void;
+    findOneAndUpdate?(next: () => void): void;
+    findOneAndDelete?(next: () => void): void;
 }
 export interface SchemaDefinition {
     [filed: string]: SchemaDefinitionParams | dataTypes;
@@ -36,14 +35,14 @@ declare class Schema {
     private indexes;
     readonly options: SchemaOptions;
     obj: SchemaDefinition;
-    readonly methods: SchemaMethods;
+    readonly preMethods: SchemaPreMethods;
     get query(): {
         columns: string[];
         indexes: string[];
         fileds: string[];
     };
     constructor(definition: SchemaDefinition, options: SchemaOptions);
-    pre(method: keyof SchemaMethods, callBack: (params: Document, next: () => void) => void): void;
+    pre(method: keyof SchemaPreMethods, callBack: (next: () => void) => void): void;
     remove(field: string): void;
     index(fields: SchemaIndex): void;
     private convertToString;
