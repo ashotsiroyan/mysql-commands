@@ -100,8 +100,8 @@ class Document implements IDocument{
             }
 
 
-            if(this.#schema.methods.save)
-                this.#schema.methods.save(this, saveNext);
+            if(this.#schema.preMethods.save)
+                this.#schema.preMethods.save.call(this, saveNext);
             else
                 saveNext();
 
@@ -159,8 +159,8 @@ class Document implements IDocument{
                 }
     
 
-                if(this.#schema.methods.update)
-                    this.#schema.methods.update(this, updateNext);
+                if(this.#schema.preMethods.update)
+                    this.#schema.preMethods.update.call(this, updateNext);
                 else
                     updateNext();
     
@@ -200,8 +200,8 @@ class Document implements IDocument{
 
                 }
 
-                if(this.#schema.methods.remove)
-                    this.#schema.methods.remove(this, removeNext);
+                if(this.#schema.preMethods.remove)
+                    this.#schema.preMethods.remove.call(this, removeNext);
                 else
                     removeNext();
 

@@ -214,8 +214,8 @@ class Model<T extends Document> implements IModel<T>{
                 query += ` (${cols}) VALUES ${values}`;
             }
 
-            if(this.schema.methods.insertMany){
-                this.schema.methods.insertMany(docs, insertNext);
+            if(this.schema.preMethods.insertMany){
+                this.schema.preMethods.insertMany.call(docs, insertNext);
             }else
                 insertNext();
 
@@ -252,8 +252,8 @@ class Model<T extends Document> implements IModel<T>{
                     query = `${new Query(this).update(doc)} ${getConditions(conditions)} LIMIT 1`;
                 }
 
-                if(this.schema.methods.update)
-                    this.schema.methods.update(doc, updateNext);
+                if(this.schema.preMethods.update)
+                    this.schema.preMethods.update.call(doc, updateNext);
                 else
                     updateNext();
 
@@ -299,8 +299,8 @@ class Model<T extends Document> implements IModel<T>{
                     query = `${new Query(this).update(doc)} ${filterFileds}`;
                 }
 
-                if(this.schema.methods.update)
-                    this.schema.methods.update(doc, updateNext);
+                if(this.schema.preMethods.update)
+                    this.schema.preMethods.update.call(doc, updateNext);
                 else
                     updateNext();
     
@@ -416,8 +416,8 @@ class Model<T extends Document> implements IModel<T>{
                     query = `${new Query(this).update(update)} ${getConditions(conditions)} LIMIT 1`;
                 }
 
-                if(this.schema.methods.findOneAndUpdate)
-                    this.schema.methods.findOneAndUpdate(update, updateNext);
+                if(this.schema.preMethods.findOneAndUpdate)
+                    this.schema.preMethods.findOneAndUpdate.call(update, updateNext);
                 else
                     updateNext();
 
@@ -480,8 +480,8 @@ class Model<T extends Document> implements IModel<T>{
                     query += ` ${getConditions(conditions)} LIMIT 1`;
                 }
 
-                if(this.schema.methods.findOneAndDelete)
-                    this.schema.methods.findOneAndDelete(doc, deleteNext);
+                if(this.schema.preMethods.findOneAndDelete)
+                    this.schema.preMethods.findOneAndDelete.call(doc, deleteNext);
                 else
                     deleteNext();
 

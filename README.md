@@ -58,8 +58,8 @@ const Comment = new Schema({
 Comment.index({name: 'text', bio: 'text'});
 
 // middleware
-Comment.pre('save', function (params, next) {
-  notify('params.name'));
+Comment.pre('save', function (next) {
+  console.log(this.name);
   next();
 });
 ```

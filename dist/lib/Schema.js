@@ -4,7 +4,7 @@ const dataTypes_1 = require("./plugins/dataTypes");
 class Schema {
     constructor(definition, options) {
         this.indexes = {};
-        this.methods = {};
+        this.preMethods = {};
         this.obj = definition;
         this.options = options;
         const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
@@ -13,11 +13,12 @@ class Schema {
         if (Boolean(this.options) && this.options.timestamps)
             this.obj = Object.assign(Object.assign({}, this.obj), { _createdAt: { type: 'DATETIME', default: () => new Date() }, _updatedAt: { type: 'DATETIME', default: () => new Date() } });
     }
+    // public methods: SchemaMethods = {};
     get query() {
         return this.convertToString();
     }
     pre(method, callBack) {
-        this.methods[method] = callBack;
+        this.preMethods[method] = callBack;
     }
     remove(field) {
         delete this.obj[field];

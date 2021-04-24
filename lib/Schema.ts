@@ -26,13 +26,17 @@ interface SchemaOptions {
     timestamps?: boolean;
 }
 
-interface SchemaMethods {
-    save?: (params: any, next: ()=> void ) => void;
-    insertMany?: (params: any, next: ()=> void ) => void;
-    update?: (params: any, next: ()=> void ) => void;
-    remove?: (params: any, next: ()=> void ) => void;
-    findOneAndUpdate?: (params: any, next: ()=> void ) => void;
-    findOneAndDelete?: (params: any, next: ()=> void ) => void;
+interface SchemaPreMethods {
+    save?(next: ()=> void ): void;
+    insertMany?(next: ()=> void ): void;
+    update?(next: ()=> void ): void;
+    remove?(next: ()=> void ): void;
+    findOneAndUpdate?(next: ()=> void ): void;
+    findOneAndDelete?(next: ()=> void ): void;
+}
+
+type SchemaMethods = {
+    [name: string]: any;
 }
 
 export interface SchemaDefinition{
@@ -43,7 +47,8 @@ class Schema{
     private indexes:any = {};
     public readonly options: SchemaOptions;
     public obj: SchemaDefinition;
-    public readonly methods: SchemaMethods = {};
+    public readonly preMethods: SchemaPreMethods = {};
+    // public methods: SchemaMethods = {};
     public get query(){
         return this.convertToString();
     }
@@ -61,8 +66,8 @@ class Schema{
             this.obj = {...this.obj, _createdAt: {type: 'DATETIME', default: () => new Date()}, _updatedAt: {type: 'DATETIME', default: () => new Date()}};
     }
 
-    pre(method: keyof SchemaMethods, callBack: (params: Document, next: ()=> void ) => void){
-        this.methods[method] = callBack;
+    pre(method: keyof SchemaPreMethods, callBack: ( next: ()=> void ) => void){
+        this.preMethods[method] = callBack;
     }
 
     remove(field: string){

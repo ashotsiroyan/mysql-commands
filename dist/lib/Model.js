@@ -103,8 +103,8 @@ class Model {
                 });
                 query += ` (${cols}) VALUES ${values}`;
             };
-            if (this.schema.methods.insertMany) {
-                this.schema.methods.insertMany(docs, insertNext);
+            if (this.schema.preMethods.insertMany) {
+                this.schema.preMethods.insertMany.call(docs, insertNext);
             }
             else
                 insertNext();
@@ -136,8 +136,8 @@ class Model {
                 const updateNext = () => {
                     query = `${new Query_1.Query(this).update(doc)} ${functions_1.getConditions(conditions)} LIMIT 1`;
                 };
-                if (this.schema.methods.update)
-                    this.schema.methods.update(doc, updateNext);
+                if (this.schema.preMethods.update)
+                    this.schema.preMethods.update.call(doc, updateNext);
                 else
                     updateNext();
                 return mysql_1.default.execute(query, this.db.db)
@@ -176,8 +176,8 @@ class Model {
                 const updateNext = () => {
                     query = `${new Query_1.Query(this).update(doc)} ${filterFileds}`;
                 };
-                if (this.schema.methods.update)
-                    this.schema.methods.update(doc, updateNext);
+                if (this.schema.preMethods.update)
+                    this.schema.preMethods.update.call(doc, updateNext);
                 else
                     updateNext();
                 return mysql_1.default.execute(query, this.db.db)
@@ -279,8 +279,8 @@ class Model {
                         });
                         query = `${new Query_1.Query(this).update(update)} ${functions_1.getConditions(conditions)} LIMIT 1`;
                     };
-                    if (this.schema.methods.findOneAndUpdate)
-                        this.schema.methods.findOneAndUpdate(update, updateNext);
+                    if (this.schema.preMethods.findOneAndUpdate)
+                        this.schema.preMethods.findOneAndUpdate.call(update, updateNext);
                     else
                         updateNext();
                     return mysql_1.default.execute(query, this.db.db)
@@ -339,8 +339,8 @@ class Model {
                     const deleteNext = () => {
                         query += ` ${functions_1.getConditions(conditions)} LIMIT 1`;
                     };
-                    if (this.schema.methods.findOneAndDelete)
-                        this.schema.methods.findOneAndDelete(doc, deleteNext);
+                    if (this.schema.preMethods.findOneAndDelete)
+                        this.schema.preMethods.findOneAndDelete.call(doc, deleteNext);
                     else
                         deleteNext();
                     return mysql_1.default.execute(query, this.db.db)

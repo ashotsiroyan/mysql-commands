@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.1.0] - 2021-04-24
+
+### Changed
+
+- Schema pre-method's params was replaced to this 
+
+
 ## [0.0.9] - 2021-04-23
 
 ### Changed
