@@ -6,8 +6,8 @@ import {joinWithFields} from './plugins/functions';
 interface Imysql {
     connection: Connection;
     connections: Connection[];
-    connect: (props: ConnectionParams) => Promise<Connection>;
-    createConnection: (props: ConnectionParams) => Promise<Connection>;
+    connect: (props: ConnectionParams, alterTable?: boolean) => Promise<Connection>;
+    createConnection: (props: ConnectionParams, alterTable?: boolean) => Promise<Connection>;
     escape: (value: any) => string;
     format: (sql: string, values?: any) => string;
     execute: (sql: string, db?: mysql.Pool) => any;
@@ -21,7 +21,7 @@ var Singleton: Imysql = (function() {
     return {
         connection,
         connections,
-        connect: async function (props: ConnectionParams) {
+        connect: async function (props: ConnectionParams, alterTable?: boolean) {
             try{
                 connection.useDb(props);
 
@@ -32,7 +32,9 @@ var Singleton: Imysql = (function() {
                         {columns, indexes, fileds} = model.schema.query;
 
                     await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`);
-                    await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
+                    
+                    if(alterTable === undefined || alterTable === true)
+                        await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
                 }
 
                 return connection;
@@ -40,7 +42,7 @@ var Singleton: Imysql = (function() {
                 throw err;
             }
         },
-        createConnection: async function (props: ConnectionParams) {
+        createConnection: async function (props: ConnectionParams, alterTable?: boolean) {
             try{
                 let _conn = new Connection(props);
 
@@ -51,7 +53,9 @@ var Singleton: Imysql = (function() {
                     {columns, indexes, fileds} = model.schema.query;
 
                     await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`, _conn.db);
-                    await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`, _conn.db);
+                    
+                    if(alterTable === undefined || alterTable === true)
+                        await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`, _conn.db);
                 }
 
                 connections.push(_conn);
