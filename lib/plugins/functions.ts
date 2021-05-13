@@ -19,7 +19,9 @@ function getConditions(arg?: RootQuerySelector | FilterQuery) {
 
     const closer = ({params, prevField = null}: any) =>{
         if(params){
-            Object.keys(params).forEach((field, i)=>{
+            let fields = Object.keys(params);
+
+            fields.forEach((field, i)=>{
                 if(typeof params[field] === 'object'){
                     if(field === '$or' || field === '$and'){
                         params[field].forEach((option: any, j: number)=>{
@@ -44,9 +46,9 @@ function getConditions(arg?: RootQuerySelector | FilterQuery) {
                     let value = params[field];
 
                     if(field[0] === '$'){
-                        filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                        filterFileds += `${prevField} ${selectorActions[field as keyof QuerySelector]} ${mysql.escape(value)}${i !== fields.length - 1?' AND ':''}`;
                     }else{
-                        filterFileds += `${field} = ${mysql.escape(value)}${i !== Object.keys(params).length - 1?' AND ':''}`;
+                        filterFileds += `${field} = ${mysql.escape(value)}${i !== fields.length - 1?' AND ':''}`;
                     }
                 }
             });

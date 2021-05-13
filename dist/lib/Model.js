@@ -41,7 +41,7 @@ class Model {
             callback = fields;
             fields = null;
         }
-        const query = new Query_1.DocumentQuery(`SELECT ${functions_1.getFileds(fields)} FROM ${this.modelName} ${functions_1.getConditions(conditions)}`, this);
+        const query = new Query_1.DocumentQuery(conditions, fields, this);
         if (callback)
             query.exec(callback);
         return query;
@@ -56,7 +56,7 @@ class Model {
             callback = fields;
             fields = null;
         }
-        const query = (new Query_1.DocumentQuery(`SELECT ${functions_1.getFileds(fields)} FROM ${this.modelName} ${functions_1.getConditions(conditions)}`, this, true)).limit(1);
+        const query = (new Query_1.DocumentQuery(conditions, fields, this, true)).limit(1);
         if (callback)
             query.exec(callback);
         return query;
@@ -66,7 +66,7 @@ class Model {
             callback = fields;
             fields = null;
         }
-        const query = (new Query_1.DocumentQuery(`SELECT ${functions_1.getFileds(fields)} FROM ${this.modelName} WHERE _id = ${mysql_1.default.escape(id)}`, this, true)).limit(1);
+        const query = (new Query_1.DocumentQuery({ _id: id }, fields, this, true)).limit(1);
         if (callback)
             query.exec(callback);
         return query;

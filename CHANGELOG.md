@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.1.2] - 2021-05-13
+
+### Added
+
+- Union method of Model
+
+
 ## [0.1.1] - 2021-04-26
 
 ### Added
@@ -54,8 +61,18 @@
 - Fixing callBacks
 
 
-## [0.0.4] - 2021-04-10
+## 0.0.4 - 2021-04-10
 
 ### Changed
 
 - Change formats of _createdAt and _updatedAt from Date to Datetime
+
+
+[0.1.2]: https://github.com/ashotsiroyan/sqltool/compare/0.1.2...0.1.1
+[0.1.1]: https://github.com/ashotsiroyan/sqltool/compare/0.1.1...0.1.0
+[0.1.0]: https://github.com/ashotsiroyan/sqltool/compare/0.1.0...0.0.9
+[0.0.9]: https://github.com/ashotsiroyan/sqltool/compare/0.0.8...0.0.9
+[0.0.8]: https://github.com/ashotsiroyan/sqltool/compare/0.0.7...0.0.8
+[0.0.7]: https://github.com/ashotsiroyan/sqltool/compare/0.0.6...0.0.7
+[0.0.6]: https://github.com/ashotsiroyan/sqltool/compare/0.0.5...0.0.6
+[0.0.5]: https://github.com/ashotsiroyan/sqltool/compare/0.0.1...0.0.5

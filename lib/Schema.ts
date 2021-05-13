@@ -78,17 +78,17 @@ class Schema{
         const exists = (name: string) =>{
             let is = false;
 
-            Object.keys(this.indexes).forEach((key)=>{
+            for(let key in this.indexes){
                 if(name === key){
                     is = true;
                     return true;
                 }
-            });
+            }
 
             return is;
         }
 
-        Object.keys(fields).forEach((key)=>{
+        for(let key in fields){
             if(this.obj[key] !== undefined){
                 if(!exists(fields[key])){
                     this.indexes[fields[key]] = [key];
@@ -96,7 +96,7 @@ class Schema{
                     this.indexes[fields[key]].push(key);
                 }
             }
-        });
+        }
     }
 
     private convertToString(){
@@ -153,9 +153,9 @@ class Schema{
             columns.push(mysql);
         });
 
-        Object.keys(this.indexes).forEach((index, i)=>{
+        for(let index in this.indexes){
             indexes.push(`${index} (${this.indexes[index].join(', ')})`);
-        });
+        }
 
         return {
             columns,

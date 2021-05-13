@@ -60,12 +60,11 @@ class Document implements IDocument{
             let query = this.isNew?"INSERT INTO " + this.modelName:`UPDATE ${this.modelName} SET`;
 
             const saveNext = () =>{
-                let keys = Object.keys(this.#schema.obj),
-                    cols = "",
+                let cols = "",
                     values = "",
                     updateString = "";
 
-                keys.forEach((key)=>{
+                for(let key in this.#schema.obj){
                     let value = this[key];
 
                     if(!this.isNew && Boolean(this.#schema.options) && this.#schema.options.timestamps && key === '_updatedAt')
@@ -81,7 +80,7 @@ class Document implements IDocument{
                             updateString += `${key} = ${value}, `;
                         }
                     }
-                });
+                };
                 
                 if(this.isNew){
                     if(cols.slice(-2) === ', ')
@@ -229,8 +228,7 @@ class Document implements IDocument{
     private convertData({doc}: any){
         const hasId = this.#schema.options === undefined || this.#schema.options._id === undefined || this.#schema.options._id;
 
-        let keys = Object.keys(this.#schema.obj);
-        keys.forEach((key)=>{
+        for(let key in this.#schema.obj){
             if(this.isNew){
                 let defaultValue = undefined,
                     value: any = null;
@@ -255,7 +253,7 @@ class Document implements IDocument{
             }else if(typeof doc[key] !== 'undefined'){
                 this[key] = doc[key];
             }
-        });
+        };
     }
 }
 

@@ -19,7 +19,8 @@ function getConditions(arg) {
     let filterFileds = "";
     const closer = ({ params, prevField = null }) => {
         if (params) {
-            Object.keys(params).forEach((field, i) => {
+            let fields = Object.keys(params);
+            fields.forEach((field, i) => {
                 if (typeof params[field] === 'object') {
                     if (field === '$or' || field === '$and') {
                         params[field].forEach((option, j) => {
@@ -44,10 +45,10 @@ function getConditions(arg) {
                 else {
                     let value = params[field];
                     if (field[0] === '$') {
-                        filterFileds += `${prevField} ${selectorActions[field]} ${mysql_1.default.escape(value)}${i !== Object.keys(params).length - 1 ? ' AND ' : ''}`;
+                        filterFileds += `${prevField} ${selectorActions[field]} ${mysql_1.default.escape(value)}${i !== fields.length - 1 ? ' AND ' : ''}`;
                     }
                     else {
-                        filterFileds += `${field} = ${mysql_1.default.escape(value)}${i !== Object.keys(params).length - 1 ? ' AND ' : ''}`;
+                        filterFileds += `${field} = ${mysql_1.default.escape(value)}${i !== fields.length - 1 ? ' AND ' : ''}`;
                     }
                 }
             });

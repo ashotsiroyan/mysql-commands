@@ -3,7 +3,7 @@ import Document from './Document';
 import {DocumentQuery, Query} from './Query';
 import Schema from './Schema';
 import Connection from './Connection';
-import {getConditions, getFileds, withOptions} from './plugins/functions';
+import {getConditions, withOptions} from './plugins/functions';
 
 
 export type QuerySelector = {
@@ -123,7 +123,7 @@ class Model<T extends Document> implements IModel<T>{
             fields = null;
         }
 
-        const query = new DocumentQuery<T[], T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} ${getConditions(conditions)}`, this);
+        const query = new DocumentQuery<T[], T>(conditions, fields, this);
 
         if(callback)
             query.exec(callback);
@@ -144,7 +144,7 @@ class Model<T extends Document> implements IModel<T>{
             fields = null;
         }
 
-        const query = (new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} ${getConditions(conditions)}`, this, true)).limit(1);
+        const query = (new DocumentQuery<T | null, T>(conditions, fields, this, true)).limit(1);
 
         if(callback)
             query.exec(callback);
@@ -160,7 +160,7 @@ class Model<T extends Document> implements IModel<T>{
             fields = null;
         }
 
-        const query = (new DocumentQuery<T | null, T>(`SELECT ${getFileds(fields)} FROM ${this.modelName} WHERE _id = ${mysql.escape(id)}`, this, true)).limit(1);
+        const query = (new DocumentQuery<T | null, T>({_id: id}, fields, this, true)).limit(1);
 
         if(callback)
             query.exec(callback);

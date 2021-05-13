@@ -24,9 +24,8 @@ var Singleton = (function () {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
                     connection.useDb(props);
-                    let keys = Object.keys(connection.models);
-                    for (let i = 0; i < keys.length; ++i) {
-                        let model = connection.models[keys[i]], { columns, indexes, fileds } = model.schema.query;
+                    for (let key in connection.models) {
+                        let model = connection.models[key], { columns, indexes, fileds } = model.schema.query;
                         yield Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0 ? `, INDEX ${indexes.join(', INDEX ')}` : ''});`);
                         if (alterTable === undefined || alterTable === true)
                             yield Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${functions_1.joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0 ? `, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}` : ''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
@@ -42,9 +41,8 @@ var Singleton = (function () {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
                     let _conn = new Connection_1.default(props);
-                    let keys = Object.keys(_conn.models);
-                    for (let i = 0; i < keys.length; ++i) {
-                        let model = _conn.models[keys[i]], { columns, indexes, fileds } = model.schema.query;
+                    for (let key in _conn.models) {
+                        let model = _conn.models[key], { columns, indexes, fileds } = model.schema.query;
                         yield Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0 ? `, INDEX ${indexes.join(', INDEX ')}` : ''});`, _conn.db);
                         if (alterTable === undefined || alterTable === true)
                             yield Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${functions_1.joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0 ? `, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}` : ''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`, _conn.db);

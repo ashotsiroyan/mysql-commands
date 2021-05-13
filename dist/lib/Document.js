@@ -45,8 +45,8 @@ class Document {
         try {
             let query = this.isNew ? "INSERT INTO " + this.modelName : `UPDATE ${this.modelName} SET`;
             const saveNext = () => {
-                let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj), cols = "", values = "", updateString = "";
-                keys.forEach((key) => {
+                let cols = "", values = "", updateString = "";
+                for (let key in __classPrivateFieldGet(this, _schema).obj) {
                     let value = this[key];
                     if (!this.isNew && Boolean(__classPrivateFieldGet(this, _schema).options) && __classPrivateFieldGet(this, _schema).options.timestamps && key === '_updatedAt')
                         value = new Date();
@@ -60,7 +60,8 @@ class Document {
                             updateString += `${key} = ${value}, `;
                         }
                     }
-                });
+                }
+                ;
                 if (this.isNew) {
                     if (cols.slice(-2) === ', ')
                         cols = cols.slice(0, -2);
@@ -185,8 +186,7 @@ class Document {
     }
     convertData({ doc }) {
         const hasId = __classPrivateFieldGet(this, _schema).options === undefined || __classPrivateFieldGet(this, _schema).options._id === undefined || __classPrivateFieldGet(this, _schema).options._id;
-        let keys = Object.keys(__classPrivateFieldGet(this, _schema).obj);
-        keys.forEach((key) => {
+        for (let key in __classPrivateFieldGet(this, _schema).obj) {
             if (this.isNew) {
                 let defaultValue = undefined, value = null;
                 if (typeof __classPrivateFieldGet(this, _schema).obj[key] !== 'string') {
@@ -206,7 +206,8 @@ class Document {
             else if (typeof doc[key] !== 'undefined') {
                 this[key] = doc[key];
             }
-        });
+        }
+        ;
     }
 }
 _schema = new WeakMap(), _db = new WeakMap(), _modelName = new WeakMap(), _isNew = new WeakMap();

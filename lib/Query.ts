@@ -1,7 +1,7 @@
 import mysql from './mysql';
 import Document from './Document';
-import Model from './Model';
-import {withOptions} from './plugins/functions';
+import Model, {RootQuerySelector, FilterQuery} from './Model';
+import {withOptions, getConditions, getFileds} from './plugins/functions';
 
 
 type SortType = {
@@ -9,16 +9,19 @@ type SortType = {
 }
 
 export class DocumentQuery<T, DocType extends Document>{
-    private mainQuery: string = "";
+    private conditions: RootQuerySelector | FilterQuery = {};
+    private fields: string[] = [];
     private skipQuery: string = "";
     private sortQuery: any = "";
     private limitQuery: string = "";
     private isOne: boolean;
+    private unionModels: {model: Model<Document>, isAll: boolean}[] = [];
 
     public readonly model: Model<DocType>;
 
-    constructor(query: string, model: Model<DocType>, isOne?: boolean){
-        this.mainQuery = query;
+    constructor(conditions: RootQuerySelector | FilterQuery, fields: string[], model: Model<DocType>, isOne?: boolean){
+        this.conditions = conditions;
+        this.fields = fields;
         this.isOne = isOne?isOne:false;
 
         this.model = model;
@@ -41,14 +44,35 @@ export class DocumentQuery<T, DocType extends Document>{
     }
 
     sort(arg: SortType){
-        if(Object.keys(arg).length > 0){
+        let keys = Object.keys(arg);
+
+        if(keys.length > 0){
             let query = " ORDER BY ";
 
-            Object.keys(arg).forEach((key: string | number, i)=>{
-                query += `${key} ${arg[key] === -1?'DESC':'ASC'}${i !== Object.keys(arg).length - 1?', ':''}`;
+            keys.forEach((key: string | number, i)=>{
+                query += `${key} ${arg[key] === -1?'DESC':'ASC'}${i !== keys.length - 1?', ':''}`;
             });
 
             this.sortQuery = query;
+        }
+        
+        return this;
+    }
+
+    union(model: Model<DocType> | Model<DocType>[], all?: boolean){
+        if(Array.isArray(model)){
+            for(let i = 0; i < model.length; ++i){
+                this.unionModels.push({
+                    model: model[i],
+                    isAll: all?true:false
+                })
+            }
+            this.unionModels.concat();
+        }else{
+            this.unionModels.push({
+                model: model,
+                isAll: all?true:false
+            })
         }
         
         return this;
@@ -58,9 +82,18 @@ export class DocumentQuery<T, DocType extends Document>{
     exec(callback: (err: any, res?: T)=> void): void
     exec(callback?: (err: any, res?: T)=> void){
         try{
-            let {mainQuery, limitQuery, sortQuery, skipQuery} = this;
+            let {conditions, fields, limitQuery, sortQuery, skipQuery, unionModels} = this;
+
+            let _conditions = getConditions(conditions),
+                _fields = getFileds(fields);
     
-            let query = mainQuery + sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
+            let query = `SELECT ${_fields} FROM ${this.model.modelName} ${_conditions}`;
+
+            unionModels.forEach((el)=>{
+                query += ` UNION${el.isAll?' ALL':''} SELECT ${_fields} FROM ${el.model.modelName} ${_conditions}`;
+            });
+            
+            query += sortQuery + limitQuery + (limitQuery.trim() !== ''?skipQuery:'');
 
             return mysql.execute(query, this.model.db.db)
                 .then(([rows]: any[])=>{
@@ -108,7 +141,7 @@ export class Query{
     update(doc: any){
         let query = `UPDATE ${this.model.modelName} SET `;
 
-        Object.keys(doc).forEach((key)=>{
+        for(let key in doc){
             let options = this.model.schema.obj[key];
 
             if(options){
@@ -119,7 +152,7 @@ export class Query{
     
                 query += `${key} = ${value}, `;
             }
-        });
+        };
 
         if(Boolean(this.model.schema.options) && this.model.schema.options.timestamps)
             query += `_updatedAt = ${mysql.escape(new Date())}, `;
