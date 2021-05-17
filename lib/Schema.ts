@@ -1,5 +1,4 @@
 import { dataTypes, dataTypesOptions } from './plugins/dataTypes';
-import Document from './Document';
 
 
 type SchemaDefinitionParams = {
@@ -56,6 +55,9 @@ class Schema{
     constructor(definition: SchemaDefinition, options: SchemaOptions){
         this.obj = definition;
         this.options = options;
+
+        if(this.obj.table_name)
+            throw "'table_name' can't be used";
 
         const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
 

@@ -65,9 +65,9 @@ class DocumentQuery {
         try {
             let { conditions, fields, limitQuery, sortQuery, skipQuery, unionModels } = this;
             let _conditions = functions_1.getConditions(conditions), _fields = functions_1.getFileds(fields);
-            let query = `SELECT ${_fields} FROM ${this.model.modelName} ${_conditions}`;
+            let query = `SELECT ${unionModels.length > 0 ? `'${this.model.modelName}' as table_name${_fields !== '*' ? ', ' + _fields : ''}` : _fields} FROM ${this.model.modelName} ${_conditions}`;
             unionModels.forEach((el) => {
-                query += ` UNION${el.isAll ? ' ALL' : ''} SELECT ${_fields} FROM ${el.model.modelName} ${_conditions}`;
+                query += ` UNION${el.isAll ? ' ALL' : ''} SELECT '${el.model.modelName}' as table_name${_fields !== '*' ? ', ' + _fields : ''} FROM ${el.model.modelName} ${_conditions}`;
             });
             query += sortQuery + limitQuery + (limitQuery.trim() !== '' ? skipQuery : '');
             return mysql_1.default.execute(query, this.model.db.db)

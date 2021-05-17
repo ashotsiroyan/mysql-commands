@@ -57,7 +57,7 @@ class Document implements IDocument{
     save(callback: (err: any, res?: Document)=> void): void;
     save(callback?: (err: any, res?: Document)=> void){
         try{
-            let query = this.isNew?"INSERT INTO " + this.modelName:`UPDATE ${this.modelName} SET`;
+            let query = this.isNew?`INSERT INTO ${this.table_name?this.table_name:this.modelName}`:`UPDATE ${this.table_name?this.table_name:this.modelName} SET`;
 
             const saveNext = () =>{
                 let cols = "",
@@ -136,16 +136,20 @@ class Document implements IDocument{
             let keys = Object.keys(doc);
 
             if(keys.length > 0){
-                let query = `UPDATE ${this.modelName} SET `;
+                let query = `UPDATE ${this.table_name?this.table_name:this.modelName} SET `;
 
                 const updateNext = () =>{    
                     keys.forEach((key)=>{
-                        let value = withOptions(doc[key], this.#schema.obj[key]);
-                        this[key] = value;
-    
-                        value = mysql.escape(value);
+                        let options = this.#schema.obj[key];
 
-                        query += `${key} = ${value}, `;
+                        if(options){
+                            let value = withOptions(doc[key], options);
+                            this[key] = value;
+        
+                            value = mysql.escape(value);
+    
+                            query += `${key} = ${value}, `;
+                        }
                     });
 
                     if(Boolean(this.#schema.options) && this.#schema.options.timestamps)
@@ -253,7 +257,10 @@ class Document implements IDocument{
             }else if(typeof doc[key] !== 'undefined'){
                 this[key] = doc[key];
             }
-        };
+        }
+
+        if(!this.isNew && doc.table_name)
+            this.table_name = doc.table_name;
     }
 }
 
