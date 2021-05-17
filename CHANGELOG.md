@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [0.1.3] - 2021-05-17
+
+### Added
+
+- 'table_name' on Union method
+
+### Changed
+
+- Fixing Union method of Model
+
+
 ## [0.1.2] - 2021-05-13
 
 ### Added
@@ -68,6 +79,7 @@
 - Change formats of _createdAt and _updatedAt from Date to Datetime
 
 
+[0.1.3]: https://github.com/ashotsiroyan/sqltool/compare/0.1.3...0.1.2
 [0.1.2]: https://github.com/ashotsiroyan/sqltool/compare/0.1.2...0.1.1
 [0.1.1]: https://github.com/ashotsiroyan/sqltool/compare/0.1.1...0.1.0
 [0.1.0]: https://github.com/ashotsiroyan/sqltool/compare/0.1.0...0.0.9
