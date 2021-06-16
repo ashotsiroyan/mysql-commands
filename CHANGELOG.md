@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.1.4] - 2021-06-16
+
+### Added
+
+- Oportunity to select _id type (int or objectId)
+
+
 ## [0.1.3] - 2021-05-17
 
 ### Added
@@ -79,6 +86,7 @@
 - Change formats of _createdAt and _updatedAt from Date to Datetime
 
 
+[0.1.4]: https://github.com/ashotsiroyan/sqltool/compare/0.1.4...0.1.3
 [0.1.3]: https://github.com/ashotsiroyan/sqltool/compare/0.1.3...0.1.2
 [0.1.2]: https://github.com/ashotsiroyan/sqltool/compare/0.1.2...0.1.1
 [0.1.1]: https://github.com/ashotsiroyan/sqltool/compare/0.1.1...0.1.0
