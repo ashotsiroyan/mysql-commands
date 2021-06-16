@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dataTypes_1 = require("./plugins/dataTypes");
 class Schema {
     constructor(definition, options) {
+        var _a;
         this.indexes = {};
         this.preMethods = {};
         this.obj = definition;
@@ -10,8 +11,12 @@ class Schema {
         if (this.obj.table_name)
             throw "'table_name' can't be used";
         const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
-        if (hasId)
-            this.obj = Object.assign({ _id: { type: 'VARCHAR', size: 24, primaryKey: true } }, this.obj);
+        if (hasId) {
+            if ((_a = this.options) === null || _a === void 0 ? void 0 : _a.objectId)
+                this.obj = Object.assign({ _id: { type: 'VARCHAR', size: 24, primaryKey: true } }, this.obj);
+            else
+                this.obj = Object.assign({ _id: { type: 'INT', primaryKey: true, autoinc: true } }, this.obj);
+        }
         if (Boolean(this.options) && this.options.timestamps)
             this.obj = Object.assign(Object.assign({}, this.obj), { _createdAt: { type: 'DATETIME', default: () => new Date() }, _updatedAt: { type: 'DATETIME', default: () => new Date() } });
     }
@@ -48,7 +53,6 @@ class Schema {
         }
     }
     convertToString() {
-        const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
         let fileds = Object.keys(this.obj), columns = [], indexes = [];
         fileds.forEach((field, i) => {
             let option = this.obj[field], mysql = `${field} `;
@@ -74,10 +78,21 @@ class Schema {
                     option = option;
                     if (key === 'null')
                         mysql += `${!option[key] ? "NOT " : ""}NULL`;
-                    else if (key === 'autoinc' && option[key])
-                        mysql += `AUTO_INCREMENT ${!hasId ? 'PRIMARY' : 'UNIQUE'} KEY`;
-                    else if ((key === 'primaryKey' || key === 'unsigned' || key === 'unique') && option[key])
-                        mysql += `${key === 'primaryKey' ? 'PRIMARY KEY' : key === 'unsigned' ? 'UNSIGNED' : 'UNIQUE KEY'}`;
+                    else if (option[key])
+                        switch (key) {
+                            case 'primaryKey':
+                                mysql += 'PRIMARY KEY';
+                                break;
+                            case 'unsigned':
+                                mysql += 'UNSIGNED';
+                                break;
+                            case 'unique':
+                                mysql += 'UNIQUE KEY';
+                                break;
+                            case 'autoinc':
+                                mysql += 'AUTO_INCREMENT';
+                                break;
+                        }
                     if (key !== 'size' && key !== 'type' && j !== Object.keys(option).length - 1)
                         mysql += " ";
                 });

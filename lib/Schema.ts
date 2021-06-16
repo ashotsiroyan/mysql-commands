@@ -23,6 +23,7 @@ interface SchemaIndex{
 interface SchemaOptions {
     _id?: boolean;
     timestamps?: boolean;
+    objectId?: boolean;
 }
 
 interface SchemaPreMethods {
@@ -61,8 +62,12 @@ class Schema{
 
         const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
 
-        if(hasId)
-            this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
+        if(hasId){
+            if(this.options?.objectId)
+                this.obj = {_id: {type: 'VARCHAR', size: 24, primaryKey: true}, ...this.obj};
+            else
+                this.obj = {_id: {type: 'INT', primaryKey: true, autoinc: true}, ...this.obj};
+        }
 
         if(Boolean(this.options) && this.options.timestamps)
             this.obj = {...this.obj, _createdAt: {type: 'DATETIME', default: () => new Date()}, _updatedAt: {type: 'DATETIME', default: () => new Date()}};
@@ -102,8 +107,6 @@ class Schema{
     }
 
     private convertToString(){
-        const hasId = this.options === undefined || this.options._id === undefined || this.options._id;
-    
         let fileds = Object.keys(this.obj),
             columns: string[] = [],
             indexes: string[] = [];
@@ -139,11 +142,14 @@ class Schema{
                     option = option as SchemaDefinitionParams;
 
                     if(key === 'null')
-                        mysql += `${!option[key]?"NOT ":""}NULL`; 
-                    else if(key === 'autoinc' && option[key])
-                        mysql += `AUTO_INCREMENT ${!hasId?'PRIMARY':'UNIQUE'} KEY`; 
-                    else if((key === 'primaryKey' || key === 'unsigned' || key === 'unique') && option[key])
-                        mysql += `${key === 'primaryKey'?'PRIMARY KEY':key === 'unsigned'?'UNSIGNED':'UNIQUE KEY'}`;
+                        mysql += `${!option[key]?"NOT ":""}NULL`;
+                    else if(option[key])
+                        switch(key){
+                            case 'primaryKey': mysql += 'PRIMARY KEY'; break;
+                            case 'unsigned': mysql += 'UNSIGNED'; break;
+                            case 'unique': mysql += 'UNIQUE KEY'; break;
+                            case 'autoinc': mysql += 'AUTO_INCREMENT'; break;
+                        }
 
                     if(key !== 'size' && key !== 'type' && j !== Object.keys(option).length - 1)
                         mysql += " ";

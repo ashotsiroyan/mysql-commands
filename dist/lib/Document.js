@@ -201,7 +201,7 @@ class Document {
                     value = functions_1.withOptions(doc[key], __classPrivateFieldGet(this, _schema).obj[key]);
                 else if (defaultValue)
                     value = functions_1.withOptions(defaultValue, __classPrivateFieldGet(this, _schema).obj[key]);
-                if (hasId && key === '_id')
+                if (hasId && key === '_id' && __classPrivateFieldGet(this, _schema).options.objectId)
                     value = ObjectId_1.default();
                 if (value)
                     this[key] = value;

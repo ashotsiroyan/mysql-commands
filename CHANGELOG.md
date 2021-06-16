@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.1.4] - 2021-06-16
+
+### Added
+
+- Oportunity to select _id type (int or objectId)
+
+
 ## [0.1.3] - 2021-05-17
 
 ### Added

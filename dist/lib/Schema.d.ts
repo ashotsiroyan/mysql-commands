@@ -19,6 +19,7 @@ interface SchemaIndex {
 interface SchemaOptions {
     _id?: boolean;
     timestamps?: boolean;
+    objectId?: boolean;
 }
 interface SchemaPreMethods {
     save?(next: () => void): void;

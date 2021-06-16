@@ -249,7 +249,7 @@ class Document implements IDocument{
                 else if(defaultValue)
                     value = withOptions(defaultValue, this.#schema.obj[key]);
                 
-                if(hasId && key === '_id')
+                if(hasId && key === '_id' && this.#schema.options.objectId)
                     value = ObjectId();
     
                 if(value)
