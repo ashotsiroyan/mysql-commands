@@ -53,7 +53,7 @@ class Schema {
         }
     }
     convertToString() {
-        let fileds = Object.keys(this.obj), columns = [], indexes = [];
+        let fileds = Object.keys(this.obj), columns = [], indexes = [], foreignKeys = [];
         fileds.forEach((field, i) => {
             let option = this.obj[field], mysql = `${field} `;
             if (typeof option !== 'string') {
@@ -78,6 +78,12 @@ class Schema {
                     option = option;
                     if (key === 'null')
                         mysql += `${!option[key] ? "NOT " : ""}NULL`;
+                    else if (key === 'foreignKey' && option['foreignKey'] !== undefined) {
+                        foreignKeys.push(`(${field}) REFERENCES ${option['foreignKey'].modelName}(${option['foreignKey'].field})`);
+                    }
+                    else if (key === 'ref' && option['ref']) {
+                        foreignKeys.push(`(${field}) REFERENCES ${option['ref']}(_id)`);
+                    }
                     else if (option[key])
                         switch (key) {
                             case 'primaryKey':
@@ -108,7 +114,8 @@ class Schema {
         return {
             columns,
             indexes,
-            fileds
+            fileds,
+            foreignKeys
         };
     }
 }

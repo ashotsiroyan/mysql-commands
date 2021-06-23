@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.1.5] - 2021-06-23
+
+### Added
+
+- Foreign key and ref
+
+
 ## [0.1.4] - 2021-06-16
 
 ### Added
@@ -86,6 +93,8 @@
 - Change formats of _createdAt and _updatedAt from Date to Datetime
 
 
+[0.1.5]: https://github.com/ashotsiroyan/sqltool/compare/0.1.5...0.1.4
+[0.1.4]: https://github.com/ashotsiroyan/sqltool/compare/0.1.4...0.1.3
 [0.1.3]: https://github.com/ashotsiroyan/sqltool/compare/0.1.3...0.1.2
 [0.1.2]: https://github.com/ashotsiroyan/sqltool/compare/0.1.2...0.1.1
 [0.1.1]: https://github.com/ashotsiroyan/sqltool/compare/0.1.1...0.1.0

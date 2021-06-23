@@ -27,12 +27,12 @@ var Singleton: Imysql = (function() {
 
                 for(let key in connection.models){
                     let model = connection.models[key],
-                        {columns, indexes, fileds} = model.schema.query;
+                        {columns, indexes, fileds, foreignKeys} = model.schema.query;
 
-                    await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`);
-                    
+                    await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''}${foreignKeys.length > 0?`, FOREIGN KEY ${foreignKeys.join(', FOREIGN KEY ')}`:''});`);
+
                     if(alterTable === undefined || alterTable === true)
-                        await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
+                        await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}${foreignKeys.length > 0?`, ADD FOREIGN KEY ${foreignKeys.join(', ADD FOREIGN KEY ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`);
                 }
 
                 return connection;
@@ -46,12 +46,12 @@ var Singleton: Imysql = (function() {
 
                 for(let key in _conn.models){
                     let model = _conn.models[key],
-                    {columns, indexes, fileds} = model.schema.query;
+                    {columns, indexes, fileds, foreignKeys} = model.schema.query;
 
-                    await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''});`, _conn.db);
+                    await Singleton.execute(`CREATE TABLE IF NOT EXISTS ${model.modelName} (${columns.join(', ')}${indexes.length > 0?`, INDEX ${indexes.join(', INDEX ')}`:''}${foreignKeys.length > 0?`, FOREIGN KEY ${foreignKeys.join(', FOREIGN KEY ')}`:''});`, _conn.db);
                     
                     if(alterTable === undefined || alterTable === true)
-                        await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`, _conn.db);
+                        await Singleton.execute(`ALTER TABLE ${model.modelName} ADD IF NOT EXISTS ${joinWithFields(', ADD IF NOT EXISTS ', columns, fileds)}${indexes.length > 0?`, ADD INDEX IF NOT EXISTS ${indexes.join(', ADD INDEX IF NOT EXISTS ')}`:''}${foreignKeys.length > 0?`, ADD FOREIGN KEY ${foreignKeys.join(', ADD FOREIGN KEY ')}`:''}, MODIFY IF EXISTS ${columns.join(', MODIFY IF EXISTS ')};`, _conn.db);
                 }
 
                 connections.push(_conn);

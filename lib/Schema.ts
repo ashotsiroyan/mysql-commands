@@ -6,6 +6,8 @@ type SchemaDefinitionParams = {
     default?: any;
     size?: number;
     primaryKey?: boolean;
+    foreignKey?: {modelName: string, field: string};
+    ref?: string;
     autoinc?: boolean;
     null?: boolean;
     unsigned?: boolean;
@@ -109,7 +111,8 @@ class Schema{
     private convertToString(){
         let fileds = Object.keys(this.obj),
             columns: string[] = [],
-            indexes: string[] = [];
+            indexes: string[] = [],
+            foreignKeys: string[] = [];
 
         fileds.forEach((field, i)=>{
             let option = this.obj[field],
@@ -143,6 +146,12 @@ class Schema{
 
                     if(key === 'null')
                         mysql += `${!option[key]?"NOT ":""}NULL`;
+                    else if(key === 'foreignKey' && option['foreignKey'] !== undefined){
+                        foreignKeys.push(`(${field}) REFERENCES ${option['foreignKey'].modelName}(${option['foreignKey'].field})`);
+                    }
+                    else if(key === 'ref' && option['ref']){
+                        foreignKeys.push(`(${field}) REFERENCES ${option['ref']}(_id)`);
+                    }
                     else if(option[key])
                         switch(key){
                             case 'primaryKey': mysql += 'PRIMARY KEY'; break;
@@ -168,7 +177,8 @@ class Schema{
         return {
             columns,
             indexes,
-            fileds
+            fileds,
+            foreignKeys
         };
     }
 }
