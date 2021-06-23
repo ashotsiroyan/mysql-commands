@@ -4,6 +4,11 @@ declare type SchemaDefinitionParams = {
     default?: any;
     size?: number;
     primaryKey?: boolean;
+    foreignKey?: {
+        modelName: string;
+        field: string;
+    };
+    ref?: string;
     autoinc?: boolean;
     null?: boolean;
     unsigned?: boolean;
@@ -41,6 +46,7 @@ declare class Schema {
         columns: string[];
         indexes: string[];
         fileds: string[];
+        foreignKeys: string[];
     };
     constructor(definition: SchemaDefinition, options: SchemaOptions);
     pre(method: keyof SchemaPreMethods, callBack: (next: () => void) => void): void;
